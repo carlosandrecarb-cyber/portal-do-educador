@@ -1,7 +1,7 @@
 // ==========================================
-// COLE A SUA URL DO GOOGLE APPS SCRIPT AQUI (A que termina com /exec)
+// COLE A SUA URL DO GOOGLE APPS SCRIPT AQUI (Terminada em /exec)
 // ==========================================
-const URL_API_GOOGLE = "https://script.google.com/macros/s/AKfycbyhm3fT8bZadeUiMAaToeRnKjD5Xr-g0QIpXFbmM-Xmua9zLKN_RJkekgO74L2Mp11V/exec";
+const URL_API_GOOGLE = "COLE_SUA_URL_DO_APPS_SCRIPT_AQUI";
 
 var dadosLocais = [];
 var evidenciaGlobal = ""; 
@@ -25,12 +25,20 @@ function buscarMatriz() {
   if (comp !== "" && ano !== "") {
     document.getElementById('blocoCurriculo').style.display = 'block';
     
-    // Adiciona parâmetro de prevenção de cache para garantir dados frescos
-    var urlBusca = URL_API_GOOGLE + "?acao=buscarMatriz&componente=" + encodeURIComponent(comp) + "&ano=" + encodeURIComponent(ano) + "&t=" + new Date().getTime();
+    var payload = {
+      acao: "buscarMatriz",
+      componente: comp,
+      ano: ano
+    };
 
-    fetch(urlBusca)
-      .then(res => res.json())
-      .then(resultados => {
+    fetch(URL_API_GOOGLE, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(resposta => {
+      if(resposta.status === "sucesso") {
+        var resultados = resposta.resultados;
         dadosLocais = resultados;
         var select = document.getElementById('unidade');
         select.innerHTML = '<option value="">Escolha a Unidade Temática...</option>';
@@ -41,10 +49,13 @@ function buscarMatriz() {
         } else {
           select.innerHTML = '<option value="">Nenhum dado encontrado para este ano</option>';
         }
-      }).catch(err => {
-        console.error("Erro ao buscar matriz:", err);
-        alert("⚠️ Erro ao carregar a matriz curricular da planilha.");
-      });
+      } else {
+        alert("⚠️ Erro ao carregar matriz: " + resposta.mensagem);
+      }
+    }).catch(err => {
+      console.error("Erro de conexão:", err);
+      alert("⚠️ Erro de conexão ao buscar a matriz curricular.");
+    });
   }
 }
 
@@ -95,7 +106,6 @@ document.getElementById('btnGerar').addEventListener('click', function() {
     recursos_marcados: obterSelecionados('chk_recursos')
   };
   
-  // Envia os dados via POST para o Google Apps Script
   fetch(URL_API_GOOGLE, {
     method: 'POST',
     body: JSON.stringify(dados)
