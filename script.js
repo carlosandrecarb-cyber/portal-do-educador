@@ -1,7 +1,7 @@
 // ==========================================
 // COLE A SUA URL DO GOOGLE APPS SCRIPT AQUI (A que termina com /exec)
 // ==========================================
-const URL_API_GOOGLE = "COLE_SUA_URL_DO_APPS_SCRIPT_AQUI";
+const URL_API_GOOGLE = "https://script.google.com/macros/s/AKfycbyhm3fT8bZadeUiMAaToeRnKjD5Xr-g0QIpXFbmM-Xmua9zLKN_RJkekgO74L2Mp11V/exec";
 
 var dadosLocais = [];
 var evidenciaGlobal = ""; 
