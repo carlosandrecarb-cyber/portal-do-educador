@@ -25,15 +25,26 @@ function buscarMatriz() {
   if (comp !== "" && ano !== "") {
     document.getElementById('blocoCurriculo').style.display = 'block';
     
-    // Faz a chamada para a API do Google buscar os dados da planilha
-    fetch(URL_API_GOOGLE + "?acao=buscarMatriz&componente=" + encodeURIComponent(comp) + "&ano=" + encodeURIComponent(ano))
+    // Adiciona parâmetro de prevenção de cache para garantir dados frescos
+    var urlBusca = URL_API_GOOGLE + "?acao=buscarMatriz&componente=" + encodeURIComponent(comp) + "&ano=" + encodeURIComponent(ano) + "&t=" + new Date().getTime();
+
+    fetch(urlBusca)
       .then(res => res.json())
       .then(resultados => {
         dadosLocais = resultados;
         var select = document.getElementById('unidade');
-        select.innerHTML = '<option value="">Escolha...</option>';
-        resultados.forEach((item, index) => select.innerHTML += '<option value="'+index+'">'+item.unidade+'</option>');
-      }).catch(err => console.error("Erro ao buscar matriz:", err));
+        select.innerHTML = '<option value="">Escolha a Unidade Temática...</option>';
+        if(resultados.length > 0) {
+          resultados.forEach((item, index) => {
+            select.innerHTML += '<option value="'+index+'">'+item.unidade+'</option>';
+          });
+        } else {
+          select.innerHTML = '<option value="">Nenhum dado encontrado para este ano</option>';
+        }
+      }).catch(err => {
+        console.error("Erro ao buscar matriz:", err);
+        alert("⚠️ Erro ao carregar a matriz curricular da planilha.");
+      });
   }
 }
 
