@@ -56,20 +56,35 @@ function popularFiltros() {
 
 function preencherSelect(id, arrayOpcoes) {
   const select = document.getElementById(id);
+  select.innerHTML = ""; // Limpa opções antigas
   arrayOpcoes.forEach(opcao => {
     select.innerHTML += `<option value="${opcao}">${opcao}</option>`;
   });
 }
 
+// Função para pegar todos os itens que o usuário selecionou na caixa múltipla
+function obterValoresMultiplos(idSelect) {
+  const select = document.getElementById(idSelect);
+  const selecionados = [];
+  for (let i = 0; i < select.options.length; i++) {
+    if (select.options[i].selected) {
+      selecionados.push(select.options[i].value);
+    }
+  }
+  return selecionados;
+}
+
 function aplicarFiltros() {
-  const profSelecionado = document.getElementById('filtroProfessor').value;
-  const compSelecionado = document.getElementById('filtroComponente').value;
-  const turmaSelecionada = document.getElementById('filtroTurma').value;
+  const profsSelecionados = obterValoresMultiplos('filtroProfessor');
+  const compsSelecionados = obterValoresMultiplos('filtroComponente');
+  const turmasSelecionadas = obterValoresMultiplos('filtroTurma');
 
   const dadosFiltrados = dadosGlobais.filter(p => {
-    const passaProf = (profSelecionado === "TODOS" || p.professor === profSelecionado);
-    const passaComp = (compSelecionado === "TODOS" || p.componente === compSelecionado);
-    const passaTurma = (turmaSelecionada === "TODOS" || p.turma === turmaSelecionada);
+    // Se o array estiver vazio (nenhum selecionado), consideramos que ele quer ver TODOS daquela categoria
+    const passaProf = (profsSelecionados.length === 0 || profsSelecionados.includes(p.professor));
+    const passaComp = (compsSelecionados.length === 0 || compsSelecionados.includes(p.componente));
+    const passaTurma = (turmasSelecionadas.length === 0 || turmasSelecionadas.includes(p.turma));
+    
     return passaProf && passaComp && passaTurma;
   });
 
@@ -80,7 +95,7 @@ function aplicarFiltros() {
 function renderizarListaPlanos(planos) {
   const container = document.getElementById('listaPlanosHtml');
   if (planos.length === 0) {
-    container.innerHTML = "<p>Nenhum planejamento encontrado para estes filtros.</p>";
+    container.innerHTML = "<p style='color:#7f8c8d;'>Nenhum planejamento encontrado para a combinação selecionada.</p>";
     return;
   }
 
@@ -108,7 +123,6 @@ function renderizarConsolidacao(planos) {
   const contagemObj = {};
 
   planos.forEach(p => {
-    // Separa as habilidades e objetos que foram salvos divididos por "|"
     const habs = p.habilidades.split("|").map(s => s.trim()).filter(s => s !== "" && s !== "-");
     const objs = p.objetos.split("|").map(s => s.trim()).filter(s => s !== "" && s !== "-");
 
@@ -125,7 +139,7 @@ function gerarHTMLRanking(containerId, objContagem) {
   const itensOrdenados = Object.keys(objContagem).sort((a, b) => objContagem[b] - objContagem[a]);
 
   if (itensOrdenados.length === 0) {
-    container.innerHTML = "<li>Nenhum dado registrado para este filtro.</li>";
+    container.innerHTML = "<li><span style='color:#7f8c8d;'>Nenhum dado registrado para este filtro.</span></li>";
     return;
   }
 
