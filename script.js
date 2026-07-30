@@ -42,7 +42,13 @@ function carregarHistorico() {
         html += '<strong>' + plano.componente + ' - ' + plano.turma + '</strong><br>';
         html += '<span style="font-size: 0.8rem; color: #7f8c8d;">Prof: ' + plano.professor + ' | Gerado em: ' + plano.data + '</span><br>';
         html += '<button class="btn-camera" style="background:#2980b9;" onclick="window.open(\''+plano.urlDoc+'\',\'_blank\')">📄 Ver Documento Oficial</button>';
-        html += '<button class="btn-camera" style="background:#e67e22; margin-top:5px;" onclick="abrirModalQR(\''+plano.urlPasta+'\')">📷 Abrir Pasta de Evidências</button>';
+        
+        // Botão 1: Abre o QR Code na tela (Para quando o professor estiver no Computador)
+        html += '<button class="btn-camera" style="background:#e67e22; margin-top:5px;" onclick="abrirModalQR(\''+plano.urlPasta+'\')">📷 Mostrar QR Code (Uso no PC)</button>';
+        
+        // Botão 2: Vai direto para o Drive (Para quando o professor estiver no Celular)
+        html += '<button class="btn-camera" style="background:#27ae60; margin-top:5px;" onclick="window.open(\''+plano.urlPasta+'\',\'_blank\')">📁 Enviar Evidências (Direto no Celular)</button>';
+        
         html += '</div>';
       });
       container.innerHTML = html;
