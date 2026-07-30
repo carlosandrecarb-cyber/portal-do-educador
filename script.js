@@ -12,6 +12,48 @@ function mudarAba(abaId, elementoBotao) {
   document.getElementById(abaId).classList.add('active');
   elementoBotao.classList.add('active');
   window.scrollTo(0, 0); 
+  
+  // Quando clicar na aba "Meus Planos", carrega o histórico
+  if(abaId === 'meusPlanos') {
+    carregarHistorico();
+  }
+}
+
+function carregarHistorico() {
+  var container = document.getElementById('listaDePlanos');
+  container.innerHTML = "Buscando seu histórico no banco de dados...";
+  
+  fetch(URL_API_GOOGLE, {
+    method: 'POST',
+    body: JSON.stringify({ acao: "buscarHistorico" })
+  })
+  .then(res => res.json())
+  .then(resposta => {
+    if (resposta.status === "sucesso") {
+      var planos = resposta.historico;
+      if (planos.length === 0) {
+        container.innerHTML = "Nenhum plano gerado ainda.";
+        return;
+      }
+      
+      var html = "";
+      planos.forEach(function(plano) {
+        html += '<div class="plano-item">';
+        html += '<strong>' + plano.componente + ' - ' + plano.turma + '</strong><br>';
+        html += '<span style="font-size: 0.8rem; color: #7f8c8d;">Prof: ' + plano.professor + ' | Gerado em: ' + plano.data + '</span><br>';
+        html += '<button class="btn-camera" style="background:#2980b9;" onclick="window.open(\''+plano.urlDoc+'\',\'_blank\')">📄 Ver Documento Oficial</button>';
+        html += '<button class="btn-camera" style="background:#e67e22; margin-top:5px;" onclick="abrirModalQR(\''+plano.urlPasta+'\')">📷 Abrir Pasta de Evidências</button>';
+        html += '</div>';
+      });
+      container.innerHTML = html;
+    } else {
+      container.innerHTML = "Erro ao carregar histórico: " + resposta.mensagem;
+    }
+  })
+  .catch(err => {
+    container.innerHTML = "Erro de conexão ao buscar histórico.";
+    console.error(err);
+  });
 }
 
 function buscarMatriz() {
@@ -117,6 +159,10 @@ document.getElementById('btnGerar').addEventListener('click', function() {
       alert("✅ Plano e Pasta gerados com sucesso!");
       window.open(resposta.url, '_blank');
       document.getElementById('desenvolvimento').value = ""; 
+      
+      // Muda de aba automaticamente para o professor ver o plano no histórico
+      mudarAba('meusPlanos', document.querySelectorAll('.tab-btn')[1]);
+      
     } else {
       alert("⚠️ Erro no servidor: " + resposta.mensagem);
     }
