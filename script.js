@@ -1,11 +1,75 @@
 // ==========================================
-// COLE A SUA URL DO GOOGLE APPS SCRIPT AQUI (Terminada em /exec)
+// API DO SISTEMA
 // ==========================================
 const URL_API_GOOGLE = "https://script.google.com/macros/s/AKfycbxFRiIGmxDp5z0GNFIjkdtx7pbA7qTbO8NfJqT1TgAmh1XlXyzh1GdPXI8XGDW4QBqA/exec";
 
 var dadosLocais = [];
 var evidenciaGlobal = ""; 
 
+// ==========================================
+// SISTEMA DE LOGIN E INJEÇÃO DINÂMICA
+// ==========================================
+function fazerLogin() {
+  var btn = document.querySelector('#telaLogin button');
+  var txtOrig = btn.innerText;
+  btn.innerText = "Autenticando...";
+  
+  var usu = document.getElementById('loginUsuario').value;
+  var sen = document.getElementById('loginSenha').value;
+  
+  fetch(URL_API_GOOGLE, { 
+    method: 'POST', 
+    body: JSON.stringify({ acao: "login", usuario: usu, senha: sen }) 
+  })
+  .then(res => res.json())
+  .then(resp => {
+    if(resp.status === "sucesso") { 
+      document.getElementById('telaLogin').style.display = 'none'; 
+      
+      // Crachá de Boas Vindas
+      const infoDiv = document.getElementById('infoUsuarioBoasVindas');
+      infoDiv.innerHTML = "👤 " + resp.nome + " | 🛡️ " + resp.perfil;
+      infoDiv.style.display = "inline-block";
+      
+      // Preenche Nome travado
+      document.getElementById('nomeProfessor').value = resp.nome;
+      
+      // Injeta os Componentes específicos do Professor
+      var selComp = document.getElementById('componente');
+      selComp.innerHTML = '<option value="">Selecione o Componente...</option>';
+      if (resp.componentes && resp.componentes.length > 0) {
+          resp.componentes.forEach(c => {
+              if (c !== "") selComp.innerHTML += `<option value="${c}">${c}</option>`;
+          });
+      } else {
+          selComp.innerHTML = '<option value="">Nenhum componente vinculado</option>';
+      }
+      
+      // Injeta as Turmas específicas do Professor
+      var selTurma = document.getElementById('turmaSelecionada');
+      selTurma.innerHTML = '<option value="">Selecione a Turma...</option>';
+      if (resp.turmas && resp.turmas.length > 0) {
+          resp.turmas.forEach(t => {
+              if (t !== "") selTurma.innerHTML += `<option value="${t}">${t}</option>`;
+          });
+      } else {
+          selTurma.innerHTML = '<option value="">Nenhuma turma vinculada</option>';
+      }
+
+    } else { 
+      document.getElementById('msgLogin').innerText = "⚠️ " + resp.mensagem; 
+      btn.innerText = txtOrig;
+    }
+  })
+  .catch(err => {
+     document.getElementById('msgLogin').innerText = "⚠️ Falha de comunicação com o servidor.";
+     btn.innerText = txtOrig;
+  });
+}
+
+// ==========================================
+// NAVEGAÇÃO E HISTÓRICO
+// ==========================================
 function mudarAba(abaId, elementoBotao) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -13,7 +77,6 @@ function mudarAba(abaId, elementoBotao) {
   elementoBotao.classList.add('active');
   window.scrollTo(0, 0); 
   
-  // Quando clicar na aba "Meus Planos", carrega o histórico
   if(abaId === 'meusPlanos') {
     carregarHistorico();
   }
@@ -30,9 +93,11 @@ function carregarHistorico() {
   .then(res => res.json())
   .then(resposta => {
     if (resposta.status === "sucesso") {
-      var planos = resposta.historico;
+      var nomeProfessorLogado = document.getElementById('nomeProfessor').value.trim();
+      var planos = resposta.historico.filter(p => p.professor.trim() === nomeProfessorLogado);
+      
       if (planos.length === 0) {
-        container.innerHTML = "Nenhum plano gerado ainda.";
+        container.innerHTML = "Nenhum plano gerado por você ainda.";
         return;
       }
       
@@ -40,15 +105,10 @@ function carregarHistorico() {
       planos.forEach(function(plano) {
         html += '<div class="plano-item">';
         html += '<strong>' + plano.componente + ' - ' + plano.turma + '</strong><br>';
-        html += '<span style="font-size: 0.8rem; color: #7f8c8d;">Prof: ' + plano.professor + ' | Gerado em: ' + plano.data + '</span><br>';
+        html += '<span style="font-size: 0.8rem; color: #7f8c8d;">Gerado em: ' + plano.data + '</span><br>';
         html += '<button class="btn-camera" style="background:#2980b9;" onclick="window.open(\''+plano.urlDoc+'\',\'_blank\')">📄 Ver Documento Oficial</button>';
-        
-        // Botão 1: Abre o QR Code na tela (Para quando o professor estiver no Computador)
         html += '<button class="btn-camera" style="background:#e67e22; margin-top:5px;" onclick="abrirModalQR(\''+plano.urlPasta+'\')">📷 Mostrar QR Code (Uso no PC)</button>';
-        
-        // Botão 2: Vai direto para o Drive (Para quando o professor estiver no Celular)
         html += '<button class="btn-camera" style="background:#27ae60; margin-top:5px;" onclick="window.open(\''+plano.urlPasta+'\',\'_blank\')">📁 Enviar Evidências (Direto no Celular)</button>';
-        
         html += '</div>';
       });
       container.innerHTML = html;
@@ -62,27 +122,24 @@ function carregarHistorico() {
   });
 }
 
+// ==========================================
+// LÓGICA DA MATRIZ CURRICULAR E FORMULÁRIO
+// ==========================================
 function buscarMatriz() {
   var comp = document.getElementById('componente').value;
-  var ano = document.getElementById('ano').value;
+  var turma = document.getElementById('turmaSelecionada').value; // Ex: "6º Ano A"
   var areaGenero = document.getElementById('areaGenero');
   
   if (comp === "Língua Portuguesa" || comp === "Língua Inglesa") { areaGenero.style.display = "block"; } 
   else { areaGenero.style.display = "none"; document.getElementById('generoTextual').value = ""; }
 
-  if (comp !== "" && ano !== "") {
+  if (comp !== "" && turma !== "") {
     document.getElementById('blocoCurriculo').style.display = 'block';
     
-    var payload = {
-      acao: "buscarMatriz",
-      componente: comp,
-      ano: ano
-    };
+    // O backend já faz o recorte do "6º Ano" para buscar na planilha
+    var payload = { acao: "buscarMatriz", componente: comp, ano: turma };
 
-    fetch(URL_API_GOOGLE, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    })
+    fetch(URL_API_GOOGLE, { method: 'POST', body: JSON.stringify(payload) })
     .then(res => res.json())
     .then(resposta => {
       if(resposta.status === "sucesso") {
@@ -95,7 +152,7 @@ function buscarMatriz() {
             select.innerHTML += '<option value="'+index+'">'+item.unidade+'</option>';
           });
         } else {
-          select.innerHTML = '<option value="">Nenhum dado encontrado para este ano</option>';
+          select.innerHTML = '<option value="">Nenhum dado encontrado para esta turma.</option>';
         }
       } else {
         alert("⚠️ Erro ao carregar matriz: " + resposta.mensagem);
@@ -131,10 +188,13 @@ function obterSelecionados(nomeCheckbox) {
   return Array.from(document.querySelectorAll('input[name="'+nomeCheckbox+'"]:checked')).map(cb => cb.value);
 }
 
+// ==========================================
+// ENVIO PARA O BANCO DE DADOS (GERAR PLANO)
+// ==========================================
 document.getElementById('btnGerar').addEventListener('click', function() {
   var btn = this; 
   var nomeProf = document.getElementById('nomeProfessor').value;
-  if(!nomeProf) { alert("Por favor, preencha o nome do(a) professor(a)."); return; }
+  if(!nomeProf) { alert("Por favor, certifique-se de estar logado corretamente."); return; }
 
   btn.innerText = "⏳ Gerando Plano no Drive..."; btn.disabled = true;
   
@@ -143,7 +203,7 @@ document.getElementById('btnGerar').addEventListener('click', function() {
     professor: nomeProf,
     tipoPlano: document.getElementById('tipoPlano').value,
     componente: document.getElementById('componente').value,
-    turma: document.getElementById('ano').value + " " + document.getElementById('turma').value,
+    turma: document.getElementById('turmaSelecionada').value, // Envia a turma formatada 
     periodo: document.getElementById('periodo').value,
     unidade: selectUnidade.options[selectUnidade.selectedIndex] ? selectUnidade.options[selectUnidade.selectedIndex].text : "",
     generoTextual: document.getElementById('generoTextual').value,
@@ -151,7 +211,8 @@ document.getElementById('btnGerar').addEventListener('click', function() {
     evidencias: evidenciaGlobal, 
     habilidades: obterSelecionados('chk_habilidade'),
     objetos: obterSelecionados('chk_objeto'),
-    recursos_marcados: obterSelecionados('chk_recursos')
+    recursos_marcados: obterSelecionados('chk_recursos'),
+    tagsSelecionadas: Array.from(document.querySelectorAll('.chk-estrategia:checked')).map(cb => cb.value)
   };
   
   fetch(URL_API_GOOGLE, {
@@ -165,10 +226,7 @@ document.getElementById('btnGerar').addEventListener('click', function() {
       alert("✅ Plano e Pasta gerados com sucesso!");
       window.open(resposta.url, '_blank');
       document.getElementById('desenvolvimento').value = ""; 
-      
-      // Muda de aba automaticamente para o professor ver o plano no histórico
       mudarAba('meusPlanos', document.querySelectorAll('.tab-btn')[1]);
-      
     } else {
       alert("⚠️ Erro no servidor: " + resposta.mensagem);
     }
@@ -179,6 +237,9 @@ document.getElementById('btnGerar').addEventListener('click', function() {
   });
 });
 
+// ==========================================
+// MODAL DO QR CODE
+// ==========================================
 function abrirModalQR(urlDeUpload) {
   var urlApi = "https://quickchart.io/qr?text=" + encodeURIComponent(urlDeUpload) + "&size=250";
   document.getElementById('imgQRCode').src = urlApi;
