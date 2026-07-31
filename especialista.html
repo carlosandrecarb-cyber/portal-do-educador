@@ -6,8 +6,8 @@
     <title>Portal do Especialista - Gestão Pedagógica</title>
     <style>
       :root {
-        --cor-principal: #1b5e20; /* Verde escuro e vivo da escola */
-        --cor-secundaria: #27ae60; /* Verde vibrante para botões */
+        --cor-principal: #1b5e20;
+        --cor-secundaria: #27ae60;
         --cor-fundo: #f4f7f6;
       }
       body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--cor-fundo); margin: 0; padding: 0; color: #333; }
@@ -15,17 +15,19 @@
       header h2 { margin: 10px 0 0 0; font-size: 1.5rem; }
       header p { margin: 5px 0 0 0; font-size: 0.9rem; color: #e8f5e9; }
       
-      .logo-escola { max-height: 70px; border-radius: 8px; }
+      .logo-escola { max-width: 100%; height: auto; max-height: 85px; object-fit: contain; border-radius: 8px; }
       
-      .container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
+      .container { max-width: 1100px; margin: 20px auto; padding: 0 15px; }
       
-      .painel-filtros { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-      .filtro-box label { display: block; font-weight: bold; margin-bottom: 5px; color: var(--cor-principal); font-size: 0.9rem; }
-      .filtro-box select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 0.95rem; background: #fafafa; }
-      .filtro-box select:focus { outline: none; border-color: var(--cor-secundaria); box-shadow: 0 0 5px rgba(39, 174, 96, 0.3); }
+      .painel-filtros { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
+      .filtro-box label.titulo-filtro { display: block; font-weight: bold; margin-bottom: 8px; color: var(--cor-principal); font-size: 0.95rem; border-bottom: 1px solid #eee; padding-bottom: 5px;}
       
-      .abas-especialista { display: flex; gap: 10px; margin-bottom: 20px; }
-      .btn-aba { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; background: #e0e6ed; color: #555; }
+      .checkbox-group { max-height: 120px; overflow-y: auto; border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: #fafafa; display: flex; flex-direction: column; gap: 8px; }
+      .checkbox-group label { display: flex; align-items: center; gap: 8px; font-weight: normal; font-size: 0.85rem; cursor: pointer; color: #444; }
+      .checkbox-group input[type="checkbox"] { transform: scale(1.1); accent-color: var(--cor-secundaria); }
+      
+      .abas-especialista { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+      .btn-aba { flex: 1; min-width: 200px; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; background: #e0e6ed; color: #555; }
       .btn-aba.ativa { background: var(--cor-principal); color: white; box-shadow: 0 4px 6px rgba(27, 94, 32, 0.3); }
       
       .secao { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
@@ -35,23 +37,36 @@
       .card-plano h4 { margin: 0 0 10px 0; color: var(--cor-principal); }
       .detalhes { font-size: 0.9rem; color: #555; margin-bottom: 10px; line-height: 1.5; }
       .tag { display: inline-block; background: #f39c12; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-bottom: 5px;}
+      .tag-tempo { background: #2980b9; }
       
       .btn-acao { background: var(--cor-secundaria); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 0.9rem; margin-right: 10px; text-decoration: none; display: inline-block; margin-top:5px;}
       .btn-acao.pasta { background: #f39c12; color: #fff; }
+      
+      .btn-imprimir { background: #d35400; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; font-size: 1rem; box-shadow: 0 4px 6px rgba(211, 84, 0, 0.3); }
       
       .lista-consolidada { list-style: none; padding: 0; margin: 0; }
       .lista-consolidada li { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
       .badge-count { background: var(--cor-secundaria); color: white; padding: 3px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; }
       
       #loading { text-align: center; padding: 40px; font-size: 1.2rem; color: #555; font-weight: bold; }
-      .dica-filtro { font-size: 0.75rem; color: #7f8c8d; font-weight: normal; }
+      
+      /* REGRAS DE IMPRESSÃO / GERAÇÃO DE PDF */
+      @media print {
+        body { background: white; color: black; }
+        header { background: white; color: var(--cor-principal); box-shadow: none; border-bottom: 3px solid var(--cor-principal); padding-bottom: 15px; }
+        header p { color: #333; }
+        .painel-filtros, .abas-especialista, .btn-acao, .btn-imprimir { display: none !important; }
+        .secao { box-shadow: none; border: none; padding: 0; }
+        .secao.ativa { display: block !important; }
+        .card-plano { page-break-inside: avoid; border: 1px solid #ccc; border-left: 6px solid #ccc; background: white; }
+        .lista-consolidada li { border-bottom: 1px solid #ccc; }
+        .badge-count { background: #e0e0e0; color: black; border: 1px solid #000; }
+      }
     </style>
   </head>
   <body>
     <header>
-      <!-- COLE O LINK DA LOGO DA SUA ESCOLA DENTRO DO src="" ABAIXO -->
       <img src="https://drive.google.com/thumbnail?id=1A2c_3Me99qofg25uyoor4roLHybutll5&sz=w800" alt="Logo da Escola" class="logo-escola">
-      
       <h2>Portal do Especialista</h2>
       <p>Gestão Pedagógica, Consolidação e Evidências</p>
     </header>
@@ -59,41 +74,56 @@
     <div class="container">
       <div class="painel-filtros">
         <div class="filtro-box">
-          <label>Professor(a): <span class="dica-filtro">(Segure CTRL para vários)</span></label>
-          <select id="filtroProfessor" multiple size="4" onchange="aplicarFiltros()"></select>
+          <label class="titulo-filtro">Ano Letivo:</label>
+          <div class="checkbox-group" id="filtroAno"></div>
         </div>
         <div class="filtro-box">
-          <label>Componente: <span class="dica-filtro">(Segure CTRL para vários)</span></label>
-          <select id="filtroComponente" multiple size="4" onchange="aplicarFiltros()"></select>
+          <label class="titulo-filtro">Trimestre:</label>
+          <div class="checkbox-group" id="filtroTrimestre"></div>
         </div>
         <div class="filtro-box">
-          <label>Ano/Turma: <span class="dica-filtro">(Segure CTRL para vários)</span></label>
-          <select id="filtroTurma" multiple size="4" onchange="aplicarFiltros()"></select>
+          <label class="titulo-filtro">Mês:</label>
+          <div class="checkbox-group" id="filtroMes"></div>
+        </div>
+        <div class="filtro-box">
+          <label class="titulo-filtro">Professor(a):</label>
+          <div class="checkbox-group" id="filtroProfessor"></div>
+        </div>
+        <div class="filtro-box">
+          <label class="titulo-filtro">Componente:</label>
+          <div class="checkbox-group" id="filtroComponente"></div>
+        </div>
+        <div class="filtro-box">
+          <label class="titulo-filtro">Turma:</label>
+          <div class="checkbox-group" id="filtroTurma"></div>
         </div>
       </div>
 
       <div class="abas-especialista">
         <button class="btn-aba ativa" onclick="mudarAbaEspecialista('abaAuditoria', this)">📂 Auditoria de Planos</button>
-        <button class="btn-aba" onclick="mudarAbaEspecialista('abaConsolidacao', this)">📊 Consolidação Coletiva</button>
+        <button class="btn-aba" onclick="mudarAbaEspecialista('abaConsolidacao', this)">📊 Consolidação Coletiva / Relatório</button>
       </div>
 
-      <div id="loading">Sincronizando dados com a base da escola... ⏳</div>
+      <div id="loading">Sincronizando base de dados... ⏳</div>
 
       <div id="abaAuditoria" class="secao ativa">
         <h3 style="margin-top:0; color:var(--cor-principal);">Planos Submetidos</h3>
-        <p style="font-size:0.9rem; color:#666; margin-bottom: 20px;">Lista de planejamentos baseada nas múltiplas seleções acima. (Se nada estiver marcado, mostra todos).</p>
+        <p style="font-size:0.9rem; color:#666; margin-bottom: 20px;">Relatório de acompanhamento. Utilize os filtros de tempo e equipe acima.</p>
         <div id="listaPlanosHtml"></div>
+        <button class="btn-imprimir" onclick="window.print()">🖨️ Exportar Relatório em PDF</button>
       </div>
 
       <div id="abaConsolidacao" class="secao">
         <h3 style="margin-top:0; color:var(--cor-principal);">Mapeamento Curricular Consolidado</h3>
-        <p style="font-size:0.9rem; color:#666; margin-bottom: 20px;">Soma das habilidades e objetos aplicados pelos professores selecionados.</p>
+        <p style="font-size:0.9rem; color:#666; margin-bottom: 20px;">Demonstrativo unificado de habilidades e objetos aplicados no período filtrado.</p>
         
         <h4 style="border-bottom: 2px solid #eee; padding-bottom: 5px;">🎯 Habilidades (Ranking Geral)</h4>
         <ul class="lista-consolidada" id="listaHabConsolidada"></ul>
         
         <h4 style="border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 30px;">📚 Objetos de Conhecimento</h4>
         <ul class="lista-consolidada" id="listaObjConsolidada"></ul>
+        
+        <button class="btn-imprimir" onclick="window.print()">🖨️ Exportar Consolidação em PDF</button>
       </div>
     </div>
 
