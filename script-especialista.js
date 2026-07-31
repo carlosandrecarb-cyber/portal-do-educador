@@ -1,13 +1,46 @@
 // ==========================================
-// COLE A SUA URL DO GOOGLE APPS SCRIPT AQUI (Terminada em /exec)
+// API DO SISTEMA
 // ==========================================
 const URL_API_GOOGLE = "https://script.google.com/macros/s/AKfycbxFRiIGmxDp5z0GNFIjkdtx7pbA7qTbO8NfJqT1TgAmh1XlXyzh1GdPXI8XGDW4QBqA/exec";
 
 let dadosGlobais = [];
 
-window.onload = function() {
-  buscarHistoricoGeral();
-};
+// ==========================================
+// SISTEMA DE LOGIN
+// ==========================================
+function fazerLogin() {
+  var btn = document.querySelector('#telaLogin button');
+  var txtOrig = btn.innerText;
+  btn.innerText = "Autenticando...";
+  
+  var usu = document.getElementById('loginUsuario').value;
+  var sen = document.getElementById('loginSenha').value;
+  
+  fetch(URL_API_GOOGLE, { 
+    method: 'POST', 
+    body: JSON.stringify({ acao: "login", usuario: usu, senha: sen }) 
+  })
+  .then(res => res.json())
+  .then(resp => {
+    if(resp.status === "sucesso") {
+      if(resp.perfil === "Especialista") {
+        document.getElementById('telaLogin').style.display = 'none';
+        document.getElementById('loading').style.display = 'block';
+        buscarHistoricoGeral(); // Só carrega os dados depois que o login for aprovado
+      } else {
+        document.getElementById('msgLogin').innerText = "⚠️ Acesso restrito apenas para Especialistas.";
+        btn.innerText = txtOrig;
+      }
+    } else { 
+      document.getElementById('msgLogin').innerText = "⚠️ " + resp.mensagem; 
+      btn.innerText = txtOrig;
+    }
+  })
+  .catch(err => {
+     document.getElementById('msgLogin').innerText = "⚠️ Falha de comunicação com o servidor.";
+     btn.innerText = txtOrig;
+  });
+}
 
 function mudarAbaEspecialista(abaId, elementoBotao) {
   document.querySelectorAll('.secao').forEach(el => el.classList.remove('ativa'));
@@ -16,6 +49,9 @@ function mudarAbaEspecialista(abaId, elementoBotao) {
   elementoBotao.classList.add('ativa');
 }
 
+// ==========================================
+// BUSCA DE DADOS E FILTROS
+// ==========================================
 function buscarHistoricoGeral() {
   fetch(URL_API_GOOGLE, {
     method: 'POST',
@@ -25,22 +61,7 @@ function buscarHistoricoGeral() {
   .then(resposta => {
     document.getElementById('loading').style.display = 'none';
     if (resposta.status === "sucesso") {
-      // Processa as datas antes de salvar globalmente
-      dadosGlobais = resposta.historico.map(p => {
-        let partesData = p.data.split(/[-/]/);
-        if (partesData.length >= 3) {
-          p.anoValor = partesData[2];
-          let numMes = parseInt(partesData[1], 10);
-          p.mesValor = obterNomeMes(numMes);
-          p.trimestreValor = obterTrimestre(numMes);
-        } else {
-          p.anoValor = "Desconhecido";
-          p.mesValor = "Desconhecido";
-          p.trimestreValor = "Desconhecido";
-        }
-        return p;
-      });
-      
+      dadosGlobais = resposta.historico;
       popularFiltros();
       aplicarFiltros();
     } else {
@@ -53,40 +74,18 @@ function buscarHistoricoGeral() {
   });
 }
 
-function obterNomeMes(num) {
-  const meses = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-  return meses[num] || "Desconhecido";
-}
-
-function obterTrimestre(num) {
-  if (num >= 1 && num <= 3) return "1º Trimestre";
-  if (num >= 4 && num <= 6) return "2º Trimestre";
-  if (num >= 7 && num <= 9) return "3º Trimestre";
-  if (num >= 10 && num <= 12) return "4º Trimestre";
-  return "Desconhecido";
-}
-
 function popularFiltros() {
-  const anos = new Set();
-  const trimestres = new Set();
-  const meses = new Set();
   const profs = new Set();
   const comps = new Set();
   const turmas = new Set();
 
   dadosGlobais.forEach(p => {
-    if(p.anoValor && p.anoValor !== "Desconhecido") anos.add(p.anoValor);
-    if(p.trimestreValor && p.trimestreValor !== "Desconhecido") trimestres.add(p.trimestreValor);
-    if(p.mesValor && p.mesValor !== "Desconhecido") meses.add(p.mesValor);
     if(p.professor && p.professor !== "-") profs.add(p.professor);
     if(p.componente && p.componente !== "-") comps.add(p.componente);
     if(p.turma && p.turma !== "-") turmas.add(p.turma);
   });
 
-  // O "sort().reverse()" no ano serve para mostrar o ano mais recente primeiro
-  preencherCheckboxes('filtroAno', Array.from(anos).sort().reverse());
-  preencherCheckboxes('filtroTrimestre', Array.from(trimestres).sort());
-  preencherCheckboxes('filtroMes', Array.from(meses));
+  preencherCheckboxes('filtroTags', ["Recuperação Trimestral", "Recomposição da Aprendizagem"]);
   preencherCheckboxes('filtroProfessor', Array.from(profs).sort());
   preencherCheckboxes('filtroComponente', Array.from(comps).sort());
   preencherCheckboxes('filtroTurma', Array.from(turmas).sort());
@@ -106,41 +105,64 @@ function obterValoresMultiplos(idContainer) {
 }
 
 function aplicarFiltros() {
-  const anosSelecionados = obterValoresMultiplos('filtroAno');
-  const trimestresSelecionados = obterValoresMultiplos('filtroTrimestre');
-  const mesesSelecionados = obterValoresMultiplos('filtroMes');
   const profsSelecionados = obterValoresMultiplos('filtroProfessor');
   const compsSelecionados = obterValoresMultiplos('filtroComponente');
   const turmasSelecionadas = obterValoresMultiplos('filtroTurma');
+  const tagsSelecionadas = obterValoresMultiplos('filtroTags');
+  
+  // Tratamento das datas para o filtro
+  const dInicioStr = document.getElementById('dataInicio').value;
+  const dFimStr = document.getElementById('dataFim').value;
+  
+  // Converte para timestamps. Usa 0 (início dos tempos) se vazio, e Infinity se o final for vazio
+  const dInicio = dInicioStr ? new Date(dInicioStr + "T00:00:00").getTime() : 0;
+  const dFim = dFimStr ? new Date(dFimStr + "T23:59:59").getTime() : Infinity;
 
   const dadosFiltrados = dadosGlobais.filter(p => {
-    const passaAno = (anosSelecionados.length === 0 || anosSelecionados.includes(p.anoValor));
-    const passaTrimestre = (trimestresSelecionados.length === 0 || trimestresSelecionados.includes(p.trimestreValor));
-    const passaMes = (mesesSelecionados.length === 0 || mesesSelecionados.includes(p.mesValor));
     const passaProf = (profsSelecionados.length === 0 || profsSelecionados.includes(p.professor));
     const passaComp = (compsSelecionados.length === 0 || compsSelecionados.includes(p.componente));
     const passaTurma = (turmasSelecionadas.length === 0 || turmasSelecionadas.includes(p.turma));
+    const passaData = (p.dataTimestamp >= dInicio && p.dataTimestamp <= dFim);
     
-    return passaAno && passaTrimestre && passaMes && passaProf && passaComp && passaTurma;
+    // Para as Tags Estratégicas: Se alguma tag marcada existir na string salva no banco, ele passa
+    let passaTag = true;
+    if (tagsSelecionadas.length > 0) {
+      passaTag = tagsSelecionadas.some(tag => p.tagsEstrategicas && p.tagsEstrategicas.includes(tag));
+    }
+    
+    return passaProf && passaComp && passaTurma && passaData && passaTag;
   });
 
   renderizarListaPlanos(dadosFiltrados);
   renderizarConsolidacao(dadosFiltrados);
 }
 
+// ==========================================
+// RENDERIZAÇÃO NA TELA
+// ==========================================
 function renderizarListaPlanos(planos) {
   const container = document.getElementById('listaPlanosHtml');
   if (planos.length === 0) {
-    container.innerHTML = "<p style='color:#7f8c8d;'>Nenhum planejamento encontrado para os filtros selecionados.</p>";
+    container.innerHTML = "<p style='color:#7f8c8d; font-style: italic;'>Nenhum planejamento encontrado para os filtros selecionados.</p>";
     return;
   }
 
   let html = "";
   planos.forEach(p => {
+    
+    // Tratamento visual para as tags estratégicas marcadas pelo professor
+    let tagsHtml = "";
+    if (p.tagsEstrategicas && p.tagsEstrategicas !== "-" && p.tagsEstrategicas !== "Nenhuma") {
+        let arrayTags = p.tagsEstrategicas.split("|").map(t => t.trim()).filter(t => t);
+        arrayTags.forEach(t => {
+            tagsHtml += `<span class="tag tag-estrategica">🎯 ${t}</span> `;
+        });
+    }
+
     html += `
       <div class="card-plano">
-        <span class="tag tag-tempo">${p.data}</span>
-        <span class="tag">${p.trimestreValor}</span>
+        <span class="tag" style="background:#2980b9;">${p.data}</span>
+        ${tagsHtml}
         <h4>${p.componente} - ${p.turma}</h4>
         <div class="detalhes">
           <strong>Professor(a):</strong> ${p.professor}<br>
