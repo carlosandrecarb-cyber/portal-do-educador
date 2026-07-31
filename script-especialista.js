@@ -25,7 +25,22 @@ function buscarHistoricoGeral() {
   .then(resposta => {
     document.getElementById('loading').style.display = 'none';
     if (resposta.status === "sucesso") {
-      dadosGlobais = resposta.historico;
+      // Processa as datas antes de salvar globalmente
+      dadosGlobais = resposta.historico.map(p => {
+        let partesData = p.data.split(/[-/]/);
+        if (partesData.length >= 3) {
+          p.anoValor = partesData[2];
+          let numMes = parseInt(partesData[1], 10);
+          p.mesValor = obterNomeMes(numMes);
+          p.trimestreValor = obterTrimestre(numMes);
+        } else {
+          p.anoValor = "Desconhecido";
+          p.mesValor = "Desconhecido";
+          p.trimestreValor = "Desconhecido";
+        }
+        return p;
+      });
+      
       popularFiltros();
       aplicarFiltros();
     } else {
@@ -38,54 +53,75 @@ function buscarHistoricoGeral() {
   });
 }
 
+function obterNomeMes(num) {
+  const meses = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  return meses[num] || "Desconhecido";
+}
+
+function obterTrimestre(num) {
+  if (num >= 1 && num <= 3) return "1º Trimestre";
+  if (num >= 4 && num <= 6) return "2º Trimestre";
+  if (num >= 7 && num <= 9) return "3º Trimestre";
+  if (num >= 10 && num <= 12) return "4º Trimestre";
+  return "Desconhecido";
+}
+
 function popularFiltros() {
+  const anos = new Set();
+  const trimestres = new Set();
+  const meses = new Set();
   const profs = new Set();
   const comps = new Set();
   const turmas = new Set();
 
   dadosGlobais.forEach(p => {
+    if(p.anoValor && p.anoValor !== "Desconhecido") anos.add(p.anoValor);
+    if(p.trimestreValor && p.trimestreValor !== "Desconhecido") trimestres.add(p.trimestreValor);
+    if(p.mesValor && p.mesValor !== "Desconhecido") meses.add(p.mesValor);
     if(p.professor && p.professor !== "-") profs.add(p.professor);
     if(p.componente && p.componente !== "-") comps.add(p.componente);
     if(p.turma && p.turma !== "-") turmas.add(p.turma);
   });
 
-  preencherSelect('filtroProfessor', Array.from(profs).sort());
-  preencherSelect('filtroComponente', Array.from(comps).sort());
-  preencherSelect('filtroTurma', Array.from(turmas).sort());
+  // O "sort().reverse()" no ano serve para mostrar o ano mais recente primeiro
+  preencherCheckboxes('filtroAno', Array.from(anos).sort().reverse());
+  preencherCheckboxes('filtroTrimestre', Array.from(trimestres).sort());
+  preencherCheckboxes('filtroMes', Array.from(meses));
+  preencherCheckboxes('filtroProfessor', Array.from(profs).sort());
+  preencherCheckboxes('filtroComponente', Array.from(comps).sort());
+  preencherCheckboxes('filtroTurma', Array.from(turmas).sort());
 }
 
-function preencherSelect(id, arrayOpcoes) {
-  const select = document.getElementById(id);
-  select.innerHTML = ""; // Limpa opções antigas
+function preencherCheckboxes(idContainer, arrayOpcoes) {
+  const container = document.getElementById(idContainer);
+  container.innerHTML = "";
   arrayOpcoes.forEach(opcao => {
-    select.innerHTML += `<option value="${opcao}">${opcao}</option>`;
+    container.innerHTML += `<label><input type="checkbox" value="${opcao}" onchange="aplicarFiltros()"> ${opcao}</label>`;
   });
 }
 
-// Função para pegar todos os itens que o usuário selecionou na caixa múltipla
-function obterValoresMultiplos(idSelect) {
-  const select = document.getElementById(idSelect);
-  const selecionados = [];
-  for (let i = 0; i < select.options.length; i++) {
-    if (select.options[i].selected) {
-      selecionados.push(select.options[i].value);
-    }
-  }
-  return selecionados;
+function obterValoresMultiplos(idContainer) {
+  const checkboxesMarcados = document.querySelectorAll(`#${idContainer} input[type="checkbox"]:checked`);
+  return Array.from(checkboxesMarcados).map(cb => cb.value);
 }
 
 function aplicarFiltros() {
+  const anosSelecionados = obterValoresMultiplos('filtroAno');
+  const trimestresSelecionados = obterValoresMultiplos('filtroTrimestre');
+  const mesesSelecionados = obterValoresMultiplos('filtroMes');
   const profsSelecionados = obterValoresMultiplos('filtroProfessor');
   const compsSelecionados = obterValoresMultiplos('filtroComponente');
   const turmasSelecionadas = obterValoresMultiplos('filtroTurma');
 
   const dadosFiltrados = dadosGlobais.filter(p => {
-    // Se o array estiver vazio (nenhum selecionado), consideramos que ele quer ver TODOS daquela categoria
+    const passaAno = (anosSelecionados.length === 0 || anosSelecionados.includes(p.anoValor));
+    const passaTrimestre = (trimestresSelecionados.length === 0 || trimestresSelecionados.includes(p.trimestreValor));
+    const passaMes = (mesesSelecionados.length === 0 || mesesSelecionados.includes(p.mesValor));
     const passaProf = (profsSelecionados.length === 0 || profsSelecionados.includes(p.professor));
     const passaComp = (compsSelecionados.length === 0 || compsSelecionados.includes(p.componente));
     const passaTurma = (turmasSelecionadas.length === 0 || turmasSelecionadas.includes(p.turma));
     
-    return passaProf && passaComp && passaTurma;
+    return passaAno && passaTrimestre && passaMes && passaProf && passaComp && passaTurma;
   });
 
   renderizarListaPlanos(dadosFiltrados);
@@ -95,7 +131,7 @@ function aplicarFiltros() {
 function renderizarListaPlanos(planos) {
   const container = document.getElementById('listaPlanosHtml');
   if (planos.length === 0) {
-    container.innerHTML = "<p style='color:#7f8c8d;'>Nenhum planejamento encontrado para a combinação selecionada.</p>";
+    container.innerHTML = "<p style='color:#7f8c8d;'>Nenhum planejamento encontrado para os filtros selecionados.</p>";
     return;
   }
 
@@ -103,7 +139,8 @@ function renderizarListaPlanos(planos) {
   planos.forEach(p => {
     html += `
       <div class="card-plano">
-        <span class="tag">${p.data}</span>
+        <span class="tag tag-tempo">${p.data}</span>
+        <span class="tag">${p.trimestreValor}</span>
         <h4>${p.componente} - ${p.turma}</h4>
         <div class="detalhes">
           <strong>Professor(a):</strong> ${p.professor}<br>
