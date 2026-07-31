@@ -6,7 +6,7 @@ const URL_API_GOOGLE = "https://script.google.com/macros/s/AKfycbxFRiIGmxDp5z0GN
 let dadosGlobais = [];
 
 // ==========================================
-// SISTEMA DE LOGIN
+// SISTEMA DE LOGIN E UI
 // ==========================================
 function fazerLogin() {
   var btn = document.querySelector('#telaLogin button');
@@ -26,7 +26,7 @@ function fazerLogin() {
       if(resp.perfil === "Especialista") {
         document.getElementById('telaLogin').style.display = 'none';
         document.getElementById('loading').style.display = 'block';
-        buscarHistoricoGeral(); // Só carrega os dados depois que o login for aprovado
+        buscarHistoricoGeral(); 
       } else {
         document.getElementById('msgLogin').innerText = "⚠️ Acesso restrito apenas para Especialistas.";
         btn.innerText = txtOrig;
@@ -47,6 +47,20 @@ function mudarAbaEspecialista(abaId, elementoBotao) {
   document.querySelectorAll('.btn-aba').forEach(el => el.classList.remove('ativa'));
   document.getElementById(abaId).classList.add('ativa');
   elementoBotao.classList.add('ativa');
+}
+
+// Função para abrir e fechar o painel de filtros
+function toggleFiltros() {
+  const painel = document.getElementById('painelFiltrosArea');
+  const btn = document.querySelector('.btn-toggle-filtros');
+  
+  if (painel.style.display === 'grid') {
+    painel.style.display = 'none';
+    btn.innerHTML = "⚙️ Abrir Filtros Avançados";
+  } else {
+    painel.style.display = 'grid';
+    btn.innerHTML = "❌ Fechar Filtros";
+  }
 }
 
 // ==========================================
@@ -110,11 +124,9 @@ function aplicarFiltros() {
   const turmasSelecionadas = obterValoresMultiplos('filtroTurma');
   const tagsSelecionadas = obterValoresMultiplos('filtroTags');
   
-  // Tratamento das datas para o filtro
   const dInicioStr = document.getElementById('dataInicio').value;
   const dFimStr = document.getElementById('dataFim').value;
   
-  // Converte para timestamps. Usa 0 (início dos tempos) se vazio, e Infinity se o final for vazio
   const dInicio = dInicioStr ? new Date(dInicioStr + "T00:00:00").getTime() : 0;
   const dFim = dFimStr ? new Date(dFimStr + "T23:59:59").getTime() : Infinity;
 
@@ -124,7 +136,6 @@ function aplicarFiltros() {
     const passaTurma = (turmasSelecionadas.length === 0 || turmasSelecionadas.includes(p.turma));
     const passaData = (p.dataTimestamp >= dInicio && p.dataTimestamp <= dFim);
     
-    // Para as Tags Estratégicas: Se alguma tag marcada existir na string salva no banco, ele passa
     let passaTag = true;
     if (tagsSelecionadas.length > 0) {
       passaTag = tagsSelecionadas.some(tag => p.tagsEstrategicas && p.tagsEstrategicas.includes(tag));
@@ -142,15 +153,21 @@ function aplicarFiltros() {
 // ==========================================
 function renderizarListaPlanos(planos) {
   const container = document.getElementById('listaPlanosHtml');
+  const placar = document.getElementById('resumoPlacar');
+  
+  // Atualiza o Placar de Resultados
   if (planos.length === 0) {
-    container.innerHTML = "<p style='color:#7f8c8d; font-style: italic;'>Nenhum planejamento encontrado para os filtros selecionados.</p>";
+    placar.innerHTML = "Nenhum plano encontrado com estes filtros.";
+    container.innerHTML = "";
     return;
+  } else if (planos.length === 1) {
+    placar.innerHTML = "✔️ 1 Plano Oficial Encontrado";
+  } else {
+    placar.innerHTML = "✔️ " + planos.length + " Planos Oficiais Encontrados";
   }
 
   let html = "";
   planos.forEach(p => {
-    
-    // Tratamento visual para as tags estratégicas marcadas pelo professor
     let tagsHtml = "";
     if (p.tagsEstrategicas && p.tagsEstrategicas !== "-" && p.tagsEstrategicas !== "Nenhuma") {
         let arrayTags = p.tagsEstrategicas.split("|").map(t => t.trim()).filter(t => t);
