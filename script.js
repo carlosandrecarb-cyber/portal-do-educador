@@ -1,8 +1,8 @@
 // ==========================================
 // ROTEADOR MASTER E API DA ESCOLA (WHITE-LABEL)
 // ==========================================
-const URL_API_MASTER = "https://script.google.com/macros/s/AKfycbxvB_wWng0aaZsCB_WaeSKKHuYqhx_EZHLkgiao_c1Cjc8PW1g2YGwnUJapakWHIZ6ObA/exec";
-let URL_API_ESCOLA = ""; // Fica vazio até o roteador descobrir de qual escola é o acesso
+const URL_API_MASTER = "https://script.google.com/macros/s/AKfycbw38IpeZty4AHF9GPUiSw18juuGRtFm2QSGNFTITWOed2V6fmbXy3MsA1bOAgJ29LjdPQ/exec";
+let URL_API_ESCOLA = ""; 
 
 var dadosLocais = [];
 var evidenciaGlobal = ""; 
@@ -15,10 +15,8 @@ window.onload = function() {
   const idEscolaMagico = urlParams.get('escola');
   
   if (idEscolaMagico) {
-    // Se o professor usou o link mágico (ex: site.com/?escola=piloto)
     iniciarSetupEscola(idEscolaMagico);
   } else {
-    // Se entrou direto no site principal, mostra a tela pedindo o código
     document.getElementById('telaWorkspace').style.display = 'flex';
   }
 }
@@ -53,10 +51,8 @@ function iniciarSetupEscola(idEscola, btnElement = null, origTxt = "") {
   .then(res => res.json())
   .then(resp => {
     if (resp.status === "sucesso") {
-      // 1. Salva a API privada desta escola para usar no resto do sistema
       URL_API_ESCOLA = resp.apiBanco;
       
-      // 2. Altera as cores e logos do site todo (White-Label)
       document.documentElement.style.setProperty('--cor-principal', resp.cor1);
       document.documentElement.style.setProperty('--cor-secundaria', resp.cor2);
       
@@ -64,7 +60,6 @@ function iniciarSetupEscola(idEscola, btnElement = null, origTxt = "") {
       document.getElementById('logoHeader').src = resp.logo;
       document.getElementById('tituloNomeEscola').innerText = resp.nome;
 
-      // 3. Esconde o Workspace e mostra a tela de Login personalizada
       document.getElementById('telaWorkspace').style.display = 'none';
       document.getElementById('telaLogin').style.display = 'flex';
 
