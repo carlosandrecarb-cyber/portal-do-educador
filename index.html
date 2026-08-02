@@ -5,35 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Portal do Educador</title>
   <style>
+    /* VARIÁVEIS MÁGICAS DE COR (O Javascript vai alterar isso dependendo da escola) */
+    :root {
+      --cor-principal: #34495e; 
+      --cor-secundaria: #2c3e50;
+    }
+
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; color: #333; }
-    header { background-color: #1b5e20; color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+    header { background-color: var(--cor-principal); color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.15); transition: background-color 0.5s ease; }
     header h2 { margin: 10px 0 0 0; font-size: 1.5rem; }
     header p { margin: 5px 0 0 0; font-size: 0.9rem; color: #e8f5e9; }
-    .logo-escola { max-width: 90%; height: auto; max-height: 85px; object-fit: contain; border-radius: 8px; }
+    .logo-escola { max-width: 90%; height: auto; max-height: 85px; object-fit: contain; border-radius: 8px; transition: all 0.5s ease; }
     
     .container { max-width: 800px; margin: 20px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     
     .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
     .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; font-weight: bold; font-size: 1rem; color: #7f8c8d; cursor: pointer; transition: 0.3s; }
-    .tab-btn.active { color: #1b5e20; border-bottom: 3px solid #1b5e20; }
+    .tab-btn.active { color: var(--cor-principal); border-bottom: 3px solid var(--cor-principal); }
     .tab-content { display: none; }
     .tab-content.active { display: block; animation: fadeIn 0.4s; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     
-    h3 { border-bottom: 2px solid #27ae60; padding-bottom: 5px; color: #1b5e20; margin-top: 25px; }
+    h3 { border-bottom: 2px solid var(--cor-secundaria); padding-bottom: 5px; color: var(--cor-principal); margin-top: 25px; transition: all 0.5s ease; }
     .bloco-campo { margin-bottom: 15px; }
     .bloco-campo label { display: block; font-weight: bold; margin-bottom: 5px; color: #2c3e50; }
-    .bloco-campo input[type="text"], .bloco-campo select, .bloco-campo textarea { width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 1rem; }
+    .bloco-campo input[type="text"], .bloco-campo select, .bloco-campo textarea, input[type="date"] { width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 1rem; }
     .bloco-campo textarea { resize: vertical; min-height: 120px; }
     
-    .btn-gerar { background-color: #27ae60; color: white; padding: 15px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: bold; width: 100%; transition: 0.3s; margin-top: 20px; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.3); }
-    .btn-gerar:hover { background-color: #1e8449; transform: translateY(-2px); }
+    .btn-gerar { background-color: var(--cor-secundaria); color: white; padding: 15px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: bold; width: 100%; transition: 0.3s; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .btn-gerar:hover { opacity: 0.9; transform: translateY(-2px); }
     
     .checkbox-item { margin-bottom: 8px; display: flex; align-items: flex-start; }
-    .checkbox-item input { margin-top: 4px; margin-right: 10px; transform: scale(1.2); accent-color: #27ae60; }
+    .checkbox-item input { margin-top: 4px; margin-right: 10px; transform: scale(1.2); accent-color: var(--cor-secundaria); }
     .checkbox-item label { font-size: 0.95rem; line-height: 1.4; color: #444; }
     
-    .plano-item { padding: 15px; border: 1px solid #ecf0f1; border-left: 5px solid #27ae60; margin-bottom: 15px; border-radius: 6px; background: #fafafa; }
+    .plano-item { padding: 15px; border: 1px solid #ecf0f1; border-left: 5px solid var(--cor-secundaria); margin-bottom: 15px; border-radius: 6px; background: #fafafa; }
     .btn-camera { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; color: white; font-weight: bold; width: 100%; display: block; margin-top: 8px; }
     
     #modalQR { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
@@ -43,18 +49,29 @@
 </head>
 <body>
 
-  <div id="telaLogin" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1b5e20; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;">
-    <img src="https://drive.google.com/thumbnail?id=1A2c_3Me99qofg25uyoor4roLHybutll5&sz=w800" style="max-width: 90%; height: auto; max-height: 100px; object-fit: contain; margin-bottom: 20px; border-radius: 8px;">
-    <h2>Acesso Restrito</h2>
+  <!-- TELA 1: WORKSPACE (Só aparece se entrar sem o link mágico) -->
+  <div id="telaWorkspace" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;">
+    <h2 style="margin-bottom: 10px;">Bem-vindo(a) ao Portal</h2>
+    <p style="margin-bottom: 20px; text-align: center; color: #ecf0f1;">Digite o código da sua instituição<br>para acessar o ambiente virtual.</p>
+    <input type="text" id="inputCodigoEscola" placeholder="Código da Escola (Ex: piloto)" style="padding: 12px; margin: 10px; width: 250px; border-radius: 6px; border: none; font-size: 1rem; text-align: center;">
+    <button onclick="verificarEscolaManual()" style="padding: 12px 20px; width: 274px; background: #f39c12; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1rem;">ACESSAR AMBIENTE</button>
+    <p id="msgWorkspace" style="color: #ffcccc; margin-top: 15px; font-size: 0.9rem; font-weight: bold; text-align: center;"></p>
+  </div>
+
+  <!-- TELA 2: LOGIN DA ESCOLA (Personalizada) -->
+  <div id="telaLogin" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--cor-principal); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; transition: background-color 0.5s ease;">
+    <img id="logoLogin" src="" style="max-width: 90%; height: auto; max-height: 100px; object-fit: contain; margin-bottom: 20px; border-radius: 8px;">
+    <h2 id="tituloNomeEscola">Acesso Restrito</h2>
     <p style="margin-bottom: 20px; color: #e8f5e9;">Portal do Educador</p>
     <input type="text" id="loginUsuario" placeholder="Usuário" style="padding: 12px; margin: 10px; width: 250px; border-radius: 6px; border: none; font-size: 1rem;">
     <input type="password" id="loginSenha" placeholder="Senha" style="padding: 12px; margin: 10px; width: 250px; border-radius: 6px; border: none; font-size: 1rem;">
-    <button onclick="fazerLogin()" style="padding: 12px 20px; width: 274px; background: #27ae60; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1rem;">ENTRAR</button>
+    <button onclick="fazerLogin()" style="padding: 12px 20px; width: 274px; background: var(--cor-secundaria); border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1rem; transition: background-color 0.5s ease;">ENTRAR</button>
     <p id="msgLogin" style="color: #ffcccc; margin-top: 15px; font-size: 0.9rem;"></p>
   </div>
 
+  <!-- SISTEMA INTERNO -->
   <header>
-    <img src="https://drive.google.com/thumbnail?id=1A2c_3Me99qofg25uyoor4roLHybutll5&sz=w800" alt="Logo da Escola" class="logo-escola">
+    <img id="logoHeader" src="" alt="Logo da Escola" class="logo-escola">
     <h2>Portal do Educador</h2>
     <p>Planejamento & Evidências</p>
     <div id="infoUsuarioBoasVindas" style="margin-top: 12px; background: rgba(0,0,0,0.25); padding: 6px 18px; border-radius: 20px; font-size: 0.95rem; font-weight: bold; color: #f1c40f; display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>
@@ -92,7 +109,7 @@
       <div class="bloco-campo">
         <label>Componente Curricular</label>
         <select id="componente" onchange="buscarMatriz()" required>
-          <option value="">Faça login para carregar suas disciplinas...</option>
+          <option value="">Aguardando autenticação...</option>
         </select>
       </div>
 
@@ -100,7 +117,7 @@
         <div style="flex: 1; min-width: 150px;">
           <label>Turma Exata</label>
           <select id="turmaSelecionada" onchange="buscarMatriz()" required>
-            <option value="">Faça login para carregar suas turmas...</option>
+            <option value="">Aguardando autenticação...</option>
           </select>
         </div>
         
