@@ -1,7 +1,7 @@
 // ==========================================
 // ROTEADOR MASTER E API DA ESCOLA (WHITE-LABEL)
 // ==========================================
-const URL_API_MASTER = "https://script.google.com/macros/s/AKfycbw38IpeZty4AHF9GPUiSw18juuGRtFm2QSGNFTITWOed2V6fmbXy3MsA1bOAgJ29LjdPQ/exec";
+const URL_API_MASTER = "https://script.google.com/macros/s/AKfycbywngVd3r_CO5Q_WN1z7CZZJkX0aghKqlZ_KoDruDndckt9d_Ga-zw_jF2buCDL7GVXLQ/exec";
 let URL_API_ESCOLA = ""; 
 
 var dadosLocais = [];
