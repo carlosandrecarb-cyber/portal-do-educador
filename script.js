@@ -1,12 +1,12 @@
 // ==========================================
-// SCRIPT COMPLETO E DEFINITIVO - PORTAL DO PROFESSOR
+// SCRIPT DEFINITIVO - PORTAL DO PROFESSOR (MODERNIZADO E COMPLETO)
 // ==========================================
 
 const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
 var professorLogado = "";
 var dadosMatrizGlobal = [];
 
-// Controle de Abas
+// Controle de Abas Dinâmicas
 function mudarAba(abaId, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
@@ -18,7 +18,7 @@ function mudarAba(abaId, btn) {
   }
 }
 
-// Fluxo de Autenticação Manual da Instituição / Escola
+// Autenticação Institucional
 function verificarEscolaManual() {
   const codigo = document.getElementById('inputCodigoEscola').value.trim().toLowerCase();
   const msg = document.getElementById('msgWorkspace');
@@ -39,7 +39,7 @@ function verificarEscolaManual() {
   }
 }
 
-// Login do Professor na Planilha
+// Login do Docente
 async function fazerLogin() {
   const usuario = document.getElementById('loginUsuario').value.trim();
   const senha = document.getElementById('loginSenha').value.trim();
@@ -102,7 +102,7 @@ function carregarComponentesProfessor(componentes, turmas) {
   selTurma.innerHTML = htmlTurma;
 }
 
-// BUSCA NA MATRIZ MESTRA (COM SUPORTE A TRIMESTRE E RÓTULO CONDICIONAL)
+// BUSCA NA MATRIZ MESTRA FILTRANDO POR TRIMESTRE
 async function buscarMatriz() {
   const componente = document.getElementById('componente').value;
   const ano = document.getElementById('turmaSelecionada').value;
@@ -150,7 +150,7 @@ async function buscarMatriz() {
   }
 }
 
-// CONSOLIDA TODAS AS HABILIDADES DA UNIDADE SELECIONADA
+// CONSOLIDAÇÃO COMPLETA DE HABILIDADES, OBJETOS E CONTEÚDOS RELACIONADOS (SEM CORTES)
 function montarCheckboxes() {
   const unidadeSelecionada = document.getElementById('unidade').value;
   const componente = document.getElementById('componente').value;
@@ -164,6 +164,7 @@ function montarCheckboxes() {
   let htmlRecomposicao = "";
   let htmlSuporte = "";
   let objetosSet = new Set();
+  let conteudosSet = new Set();
   let generosSet = new Set();
 
   itensDaUnidade.forEach(item => {
@@ -180,8 +181,12 @@ function montarCheckboxes() {
       }
     }
 
+    // Captura rica de Objetos e Conteúdos Relacionados sem cortes
     if (item.objetoConhecimento && item.objetoConhecimento !== "-") {
       objetosSet.add(item.objetoConhecimento);
+    }
+    if (item.conteudosRelacionados && item.conteudosRelacionados !== "-") {
+      conteudosSet.add(item.conteudosRelacionados);
     }
     if (item.genero && item.genero !== "-") {
       generosSet.add(item.genero);
@@ -202,7 +207,12 @@ function montarCheckboxes() {
     ` : ''}
   `;
 
-  document.getElementById('listaObjetos').innerHTML = Array.from(objetosSet).map(o => `• ${o}`).join("<br>") || "Nenhum objeto cadastrado.";
+  // Une os objetos de conhecimento e conteúdos relacionados em um texto completo e robusto
+  const textoObjetosCompleto = Array.from(objetosSet).join(" | ");
+  const textoConteudosCompleto = Array.from(conteudosSet).join(" | ");
+  const conteudoFinalConsolidado = [textoObjetosCompleto, textoConteudosCompleto].filter(Boolean).join(" — ");
+
+  document.getElementById('listaObjetos').innerHTML = conteudoFinalConsolidado ? `• ${conteudoFinalConsolidado}` : "Nenhum objeto cadastrado.";
   
   const campoGenero = document.getElementById('generoTextual');
   if (campoGenero && (componente === "Língua Portuguesa" || componente === "Língua Inglesa")) {
@@ -210,7 +220,7 @@ function montarCheckboxes() {
   }
 }
 
-// GERAR PLANO OFICIAL
+// GERAR PLANO DE AULA OFICIAL
 async function enviarPlanoAulaAPI() {
   const btnGerar = document.getElementById('btnGerar');
   btnGerar.innerText = "⏳ Gerando Documento Oficial...";
@@ -264,7 +274,7 @@ async function enviarPlanoAulaAPI() {
   }
 }
 
-// CARREGAR HISTÓRICO DE PLANOS ("MEUS PLANOS")
+// HISTÓRICO DE PLANOS ("MEUS PLANOS")
 async function carregarMeusPlanos() {
   const container = document.getElementById('listaDePlanos');
   container.innerHTML = "Carregando seus planos...";
@@ -308,7 +318,7 @@ async function carregarMeusPlanos() {
   }
 }
 
-// MODAL QR CODE PARA EVIDÊNCIAS
+// QR CODE PARA EVIDÊNCIAS
 function abrirModalQR(pastaUrl) {
   const modal = document.getElementById('modalQR');
   const imgQR = document.getElementById('imgQRCode');
@@ -325,7 +335,7 @@ function fecharModalQR() {
   if (modal) modal.style.display = 'none';
 }
 
-// Inicialização de Eventos
+// Evento de Inicialização
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById('btnGerar');
   if (btn) {
