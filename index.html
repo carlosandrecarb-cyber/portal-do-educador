@@ -3,46 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Portal do Educador - Planejamento Pedagógico</title>
+  <title>Portal do Educador</title>
   <style>
+    /* VARIÁVEIS MÁGICAS DE COR (O Javascript vai alterar isso dependendo da escola) */
     :root {
       --cor-principal: #34495e; 
       --cor-secundaria: #2c3e50;
     }
 
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; color: #333; }
-    header { background-color: var(--cor-principal); color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+    header { background-color: var(--cor-principal); color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.15); transition: background-color 0.5s ease; }
     header h2 { margin: 10px 0 0 0; font-size: 1.5rem; }
     header p { margin: 5px 0 0 0; font-size: 0.9rem; color: #e8f5e9; }
-    .logo-escola { max-width: 90%; height: auto; max-height: 85px; object-fit: contain; border-radius: 8px; }
+    .logo-escola { max-width: 90%; height: auto; max-height: 85px; object-fit: contain; border-radius: 8px; transition: all 0.5s ease; }
     
-    .container { max-width: 850px; margin: 20px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .container { max-width: 800px; margin: 20px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     
     .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
     .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; font-weight: bold; font-size: 1rem; color: #7f8c8d; cursor: pointer; transition: 0.3s; }
     .tab-btn.active { color: var(--cor-principal); border-bottom: 3px solid var(--cor-principal); }
     .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .tab-content.active { display: block; animation: fadeIn 0.4s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     
-    h3 { border-bottom: 2px solid var(--cor-secundaria); padding-bottom: 5px; color: var(--cor-principal); margin-top: 25px; }
+    h3 { border-bottom: 2px solid var(--cor-secundaria); padding-bottom: 5px; color: var(--cor-principal); margin-top: 25px; transition: all 0.5s ease; }
     .bloco-campo { margin-bottom: 15px; }
     .bloco-campo label { display: block; font-weight: bold; margin-bottom: 5px; color: #2c3e50; }
     .bloco-campo input[type="text"], .bloco-campo select, .bloco-campo textarea, input[type="date"] { width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 1rem; }
-    .bloco-campo textarea { resize: vertical; min-height: 100px; }
+    .bloco-campo textarea { resize: vertical; min-height: 120px; }
     
-    /* Etapas progressivas ocultas inicialmente para evitar confusão */
-    .etapa-painel { display: none; background: #fafbfc; border: 1px solid #e1e4e8; padding: 20px; border-radius: 8px; margin-top: 15px; }
-
-    .bloco-habilidade { background: #eef2f5; border-left: 4px solid var(--cor-principal); padding: 15px; border-radius: 6px; margin-bottom: 15px; }
-    .bloco-habilidade label { font-weight: bold; color: #2c3e50; display: block; margin-bottom: 5px; }
-
     .btn-gerar { background-color: var(--cor-secundaria); color: white; padding: 15px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: bold; width: 100%; transition: 0.3s; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .btn-gerar:hover { opacity: 0.9; }
+    .btn-gerar:hover { opacity: 0.9; transform: translateY(-2px); }
+    
+    .checkbox-item { margin-bottom: 8px; display: flex; align-items: flex-start; }
+    .checkbox-item input { margin-top: 4px; margin-right: 10px; transform: scale(1.2); accent-color: var(--cor-secundaria); }
+    .checkbox-item label { font-size: 0.95rem; line-height: 1.4; color: #444; }
+    
+    .plano-item { padding: 15px; border: 1px solid #ecf0f1; border-left: 5px solid var(--cor-secundaria); margin-bottom: 15px; border-radius: 6px; background: #fafafa; }
+    .btn-camera { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; color: white; font-weight: bold; width: 100%; display: block; margin-top: 8px; }
+    
+    #modalQR { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
+    #imgQRCode { background: white; padding: 15px; border-radius: 10px; max-width: 80%; }
+    #btnFecharQR { margin-top: 20px; padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <!-- TELA 1: WORKSPACE INSTITUCIONAL -->
+  <!-- TELA 1: WORKSPACE -->
   <div id="telaWorkspace" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;">
     <h2 style="margin-bottom: 10px;">Bem-vindo(a) ao Portal</h2>
     <p style="margin-bottom: 20px; text-align: center; color: #ecf0f1;">Digite o código da sua instituição<br>para acessar o ambiente virtual.</p>
@@ -51,8 +58,8 @@
     <p id="msgWorkspace" style="color: #ffcccc; margin-top: 15px; font-size: 0.9rem; font-weight: bold; text-align: center;"></p>
   </div>
 
-  <!-- TELA 2: LOGIN DO PROFESSOR -->
-  <div id="telaLogin" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--cor-principal); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white;">
+  <!-- TELA 2: LOGIN DA ESCOLA -->
+  <div id="telaLogin" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--cor-principal); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; transition: background-color 0.5s ease;">
     <img id="logoLogin" src="" style="max-width: 90%; height: auto; max-height: 100px; object-fit: contain; margin-bottom: 20px; border-radius: 8px;">
     <h2 id="tituloNomeEscola">Acesso Restrito</h2>
     <p style="margin-bottom: 20px; color: #e8f5e9;">Portal do Educador</p>
@@ -62,12 +69,12 @@
     <p id="msgLogin" style="color: #ffcccc; margin-top: 15px; font-size: 0.9rem;"></p>
   </div>
 
-  <!-- CABEÇALHO DO PORTAL -->
+  <!-- SISTEMA INTERNO -->
   <header>
     <img id="logoHeader" src="" alt="Logo da Escola" class="logo-escola">
     <h2>Portal do Educador</h2>
     <p>Planejamento & Evidências</p>
-    <div id="infoUsuarioBoasVindas" style="margin-top: 12px; background: rgba(0,0,0,0.25); padding: 6px 18px; border-radius: 20px; font-size: 0.95rem; font-weight: bold; color: #f1c40f; display: none;"></div>
+    <div id="infoUsuarioBoasVindas" style="margin-top: 12px; background: rgba(0,0,0,0.25); padding: 6px 18px; border-radius: 20px; font-size: 0.95rem; font-weight: bold; color: #f1c40f; display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>
   </header>
 
   <div class="container">
@@ -77,9 +84,8 @@
     </div>
 
     <div id="gerarPlano" class="tab-content active">
+      <h3>1. Identificação</h3>
       
-      <!-- ETAPA 1: IDENTIFICAÇÃO -->
-      <h3>1. Identificação Inicial</h3>
       <div class="bloco-campo">
         <label>Nome do(a) Professor(a)</label>
         <input type="text" id="nomeProfessor" readonly style="background-color: #ecf0f1; color: #7f8c8d;">
@@ -100,128 +106,106 @@
         </select>
       </div>
 
+      <!-- COMPONENTE, TURMA E TRIMESTRE ALINHADOS -->
       <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <div class="bloco-campo" style="flex: 1; min-width: 180px;">
+        <div class="bloco-campo" style="flex: 2; min-width: 180px;">
           <label>Componente Curricular</label>
-          <select id="componente" onchange="liberarSelecaoTurma()" required>
-            <option value="">Selecione a disciplina...</option>
-            <option value="Matemática">Matemática</option>
-            <option value="Língua Portuguesa">Língua Portuguesa</option>
-            <option value="Geografia">Geografia</option>
-            <option value="História">História</option>
-            <option value="Ciências">Ciências</option>
-            <option value="Língua Inglesa">Língua Inglesa</option>
-            <option value="Arte">Arte</option>
-            <option value="Educação Física">Educação Física</option>
-            <option value="Ensino Religioso">Ensino Religioso</option>
-          </select>
-        </div>
-        
-        <div class="bloco-campo" style="flex: 1; min-width: 150px;">
-          <label>Turma / Ano</label>
-          <select id="turmaSelecionada" onchange="liberarTrimestre()" required>
-            <option value="">Aguardando componente...</option>
+          <select id="componente" onchange="buscarMatriz()" required>
+            <option value="">Aguardando autenticação...</option>
           </select>
         </div>
 
-        <div class="bloco-campo" style="flex: 1; min-width: 150px;">
+        <div class="bloco-campo" style="flex: 1; min-width: 140px;">
+          <label>Turma Exata</label>
+          <select id="turmaSelecionada" onchange="buscarMatriz()" required>
+            <option value="">Aguardando...</option>
+          </select>
+        </div>
+
+        <!-- NOVO: SELETOR DE TRIMESTRE INTEGRADO -->
+        <div class="bloco-campo" style="flex: 1; min-width: 140px;">
           <label>Trimestre</label>
-          <select id="selTrimestre" onchange="carregarUnidadesTematicas()" required>
-            <option value="">Aguardando turma...</option>
+          <select id="selTrimestre" onchange="buscarMatriz()" required>
             <option value="1º Trimestre">1º Trimestre</option>
             <option value="2º Trimestre">2º Trimestre</option>
-            <option value="3º Trimestre">3º Trimestre</option>
+            <option value="3º Trimestre" selected>3º Trimestre</option>
           </select>
         </div>
       </div>
 
-      <!-- ETAPA 2: APARECE APÓS ESCOLHER TRIMESTRE (UNIDADE TEMÁTICA PRIMEIRO) -->
-      <div id="etapaUnidade" class="etapa-painel">
-        <h3>2. Estrutura Curricular (Escolha da Unidade)</h3>
-        <div class="bloco-campo">
-          <label id="labelUnidadeDinamica">Unidade Temática</label>
-          <select id="unidade" onchange="carregarHabilidadesPorUnidade()">
-            <option value="">Selecione o trimestre primeiro...</option>
-          </select>
+      <div class="bloco-campo">
+        <label>Período (Data de Aplicação)</label>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input type="date" id="dataInicioPer" style="padding: 10px; border-radius: 6px; border: 1px solid #bdc3c7; width: 100%;">
+          <span style="font-weight:bold; color:#7f8c8d;">até</span>
+          <input type="date" id="dataFimPer" style="padding: 10px; border-radius: 6px; border: 1px solid #bdc3c7; width: 100%;">
         </div>
       </div>
 
-      <!-- ETAPA 3: APARECE APÓS ESCOLHER A UNIDADE (HABILIDADES UMA A UMA) -->
-      <div id="etapaHabilidades" class="etapa-painel">
-        <h3>3. Seleção de Habilidades Vinculadas</h3>
-        
-        <div class="bloco-habilidade">
-          <label>⭐ Habilidade Priorizada do Ano Escolar:</label>
-          <select id="selHabPriorizada" style="margin-bottom:0;">
-            <option value="">Selecione a unidade temática...</option>
-          </select>
-        </div>
-
-        <div class="bloco-habilidade">
-          <label>🔄 Habilidade de Recomposição:</label>
-          <select id="selHabRecomposicao" style="margin-bottom:0;">
-            <option value="-">Nenhuma / Não aplicável</option>
-          </select>
-        </div>
-
-        <div class="bloco-habilidade">
-          <label>🛡️ Habilidade de Suporte:</label>
-          <select id="selHabSuporte" style="margin-bottom:0;">
-            <option value="-">Nenhuma / Não aplicável</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- ETAPA 4: METODOLOGIA E EXECUÇÃO -->
-      <div id="etapaMetodologia" class="etapa-painel">
-        <h3>4. Metodologia, Contexto & Execução</h3>
+      <div id="blocoCurriculo" style="display:none;">
+        <h3>2. Base Curricular</h3>
         
         <div class="bloco-campo">
-          <label>Objetos de Conhecimento (Conteúdo)</label>
-          <textarea id="desenvolvimentoObjeto" rows="2" placeholder="Preenchido automaticamente pela matriz..."></textarea>
+          <label id="labelUnidadeDinamica">Unidade Temática (Eixo)</label>
+          <select id="unidade" onchange="montarCheckboxes()"><option value="">Aguardando seleção...</option></select>
         </div>
 
-        <div class="bloco-campo" id="areaGenero" style="display: none;">
-          <label>Gênero Textual (Específico para Linguagens)</label>
-          <input type="text" id="generoTextual" placeholder="Ex: Conto, Poema, Notícia...">
-        </div>
-
-        <div class="bloco-campo">
-          <label>Período (Data de Aplicação)</label>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <input type="date" id="dataInicioPer" style="padding: 10px; border-radius: 6px; border: 1px solid #bdc3c7; width: 100%;">
-            <span style="font-weight:bold; color:#7f8c8d;">até</span>
-            <input type="date" id="dataFimPer" style="padding: 10px; border-radius: 6px; border: 1px solid #bdc3c7; width: 100%;">
+        <div id="painelOpcoes" style="display:none;">
+          <div class="bloco-campo">
+            <label style="color:#e67e22;">Habilidades da BNCC/Referencial:</label>
+            <div id="listaHabilidades" style="background:#f9f9f9; padding:10px; border-radius:6px; border:1px solid #ddd; max-height:200px; overflow-y:auto;"></div>
           </div>
-        </div>
 
-        <div class="bloco-campo">
-          <label>Desenvolvimento da Aula (Passo a passo, anotações)</label>
-          <textarea id="desenvolvimento" placeholder="Cole aqui o roteiro da aula..."></textarea>
-        </div>
-        
-        <div class="bloco-campo">
-          <label>Recursos Didáticos:</label>
-          <div style="background:#f9f9f9; padding:10px; border-radius:6px; border:1px solid #ddd; display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-            <label><input type="checkbox" name="chk_recursos" value="Quadro e Marcador / Giz"> Quadro e Marcador</label>
-            <label><input type="checkbox" name="chk_recursos" value="Livro Didático"> Livro Didático</label>
-            <label><input type="checkbox" name="chk_recursos" value="Projetor Multimídia / Lousa Digital / TV"> Projetor / Lousa Digital / TV</label>
-            <label><input type="checkbox" name="chk_recursos" value="Materiais Impressos (Textos / Atividades)"> Materiais Impressos / Xerox</label>
-            <label><input type="checkbox" name="chk_recursos" value="Jogos / Material Concreto / Manipuláveis"> Jogos / Material Concreto</label>
-            <label><input type="checkbox" name="chk_recursos" value="Notebook / Tablet / Celular"> Notebook / Tablet / Celular</label>
-            <label><input type="checkbox" name="chk_recursos" value="Vídeos / Áudios / Mídias"> Vídeos / Áudios / Mídias</label>
-            <label><input type="checkbox" name="chk_recursos" value="Espaço Externo / Quadra / Pátio"> Espaço Externo / Quadra</label>
-            <label><input type="checkbox" name="chk_recursos" value="Laboratório / Equipamentos Práticos"> Laboratório / Práticas</label>
-            <label><input type="checkbox" name="chk_recursos" value="Materiais de Arte (Cartolina, Tintas, etc.)"> Materiais de Arte / Papelaria</label>
-            <label><input type="checkbox" name="chk_recursos" value="Dicionários / Gramáticas / Livros de Apoio"> Dicionários / Livros de Apoio</label>
-            <label><input type="checkbox" name="chk_recursos" value="Cartazes / Mapas / Maquetes"> Cartazes / Mapas / Maquetes</label>
+          <div class="bloco-campo">
+            <label style="color:#2980b9;">Objetos de Conhecimento (Conteúdo):</label>
+            <div id="listaObjetos" style="background:#f9f9f9; padding:10px; border-radius:6px; border:1px solid #ddd; max-height:200px; overflow-y:auto;"></div>
           </div>
+
+          <div class="bloco-campo" id="areaGenero" style="display: none;">
+            <label>Gênero Textual (Específico para Linguagens)</label>
+            <input type="text" id="generoTextual" placeholder="Ex: Conto, Poema, Notícia...">
+          </div>
+
+          <h3>3. Metodologia e Execução</h3>
+          <div class="bloco-campo">
+            <label>Desenvolvimento da Aula (Pode colar textos grandes aqui)</label>
+            <textarea id="desenvolvimento" placeholder="Cole aqui o roteiro da aula, o passo a passo gerado pelo chatGPT, ou digite suas anotações..."></textarea>
+          </div>
+          
+          <div class="bloco-campo">
+            <label>Recursos Didáticos:</label>
+            <div style="background:#f9f9f9; padding:10px; border-radius:6px; border:1px solid #ddd; display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <label><input type="checkbox" name="chk_recursos" value="Quadro e Marcador / Giz"> Quadro e Marcador</label>
+              <label><input type="checkbox" name="chk_recursos" value="Livro Didático"> Livro Didático</label>
+              <label><input type="checkbox" name="chk_recursos" value="Projetor Multimídia / Lousa Digital / TV"> Projetor / Lousa Digital / TV</label>
+              <label><input type="checkbox" name="chk_recursos" value="Materiais Impressos (Textos / Atividades)"> Materiais Impressos / Xerox</label>
+              <label><input type="checkbox" name="chk_recursos" value="Jogos / Material Concreto / Manipuláveis"> Jogos / Material Concreto</label>
+              <label><input type="checkbox" name="chk_recursos" value="Notebook / Tablet / Celular"> Notebook / Tablet / Celular</label>
+              <label><input type="checkbox" name="chk_recursos" value="Vídeos / Áudios / Mídias"> Vídeos / Áudios / Mídias</label>
+              <label><input type="checkbox" name="chk_recursos" value="Espaço Externo / Quadra / Pátio"> Espaço Externo / Quadra</label>
+              <label><input type="checkbox" name="chk_recursos" value="Laboratório / Equipamentos Práticos"> Laboratório / Práticas</label>
+              <label><input type="checkbox" name="chk_recursos" value="Materiais de Arte (Cartolina, Tintas, etc.)"> Materiais de Arte / Papelaria</label>
+              <label><input type="checkbox" name="chk_recursos" value="Dicionários / Gramáticas / Livros de Apoio"> Dicionários / Livros de Apoio</label>
+              <label><input type="checkbox" name="chk_recursos" value="Cartazes / Mapas / Maquetes"> Cartazes / Mapas / Maquetes</label>
+            </div>
+          </div>
+          
+          <!-- MARCADORES ESTRATÉGICOS -->
+          <div class="bloco-campo" style="margin-top: 15px; margin-bottom: 15px;">
+            <label style="color:#d35400; font-weight:bold;">🎯 Ações Estratégicas (Opcional):</label>
+            <div style="background: #fff3e0; padding: 10px; border-radius: 8px; border: 1px solid #ffb74d;">
+              <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; cursor:pointer;">
+                <input type="checkbox" class="chk-estrategia" value="Recuperação Trimestral" style="transform: scale(1.2); accent-color: #d35400;"> Recuperação Trimestral
+              </label>
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                <input type="checkbox" class="chk-estrategia" value="Recomposição da Aprendizagem" style="transform: scale(1.2); accent-color: #d35400;"> Recomposição da Aprendizagem
+              </label>
+            </div>
+          </div>
+
+          <button id="btnGerar" class="btn-gerar">Gerar Plano Oficial</button>
         </div>
-
-        <button id="btnGerar" class="btn-gerar" onclick="enviarPlanoAulaAPI()">Gerar Plano Oficial</button>
-        <p id="msgStatusPlano" style="font-weight: bold; margin-top: 15px; text-align: center;"></p>
       </div>
-
     </div>
 
     <div id="meusPlanos" class="tab-content">
@@ -229,6 +213,13 @@
       <p style="font-size:0.9rem; color:#666;">Acesse seus documentos ou envie fotos e arquivos diretos para a pasta da aula.</p>
       <div id="listaDePlanos" style="margin-top:20px;"></div>
     </div>
+  </div>
+
+  <div id="modalQR">
+    <h3 style="color:white; margin-bottom:10px;">Aponte a câmera do celular</h3>
+    <p style="color:#ddd; margin-bottom:20px; text-align:center;">Para enviar fotos direto para a pasta desta aula.</p>
+    <img id="imgQRCode" src="" alt="QR Code">
+    <button id="btnFecharQR" onclick="fecharModalQR()">FECHAR</button>
   </div>
 
   <script src="script.js"></script>
