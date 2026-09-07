@@ -47,7 +47,7 @@
 
       <div class="guia-card">
         <h4>📌 Instruções de Preenchimento</h4>
-        <p>Selecione a turma, componente e trimestre. As <strong>Habilidades Priorizadas, de Recomposição e de Suporte</strong> aparecem listadas individualmente (uma a uma) em primeiro lugar, seguidas pela Unidade Temática.</p>
+        <p>Selecione a turma, componente e trimestre. As <strong>Habilidades Priorizadas, de Recomposição e de Suporte</strong> aparecem listadas individualmente (uma a uma) em primeiro lugar, seguidas pela estrutura curricular.</p>
       </div>
 
       <div style="display: flex; gap: 15px;">
@@ -86,7 +86,7 @@
 
       <hr style="border: 0; border-top: 1px solid #ecf0f1; margin: 20px 0;">
 
-      <!-- ORDEM CORRIGIDA: HABILIDADES PRIMEIRO, UMA A UMA -->
+      <!-- ORDEM RIGOROSA: HABILIDADES PRIMEIRO, UMA A UMA -->
       <h3>🎯 1. Seleção de Habilidades (Uma a Uma)</h3>
       
       <div class="bloco-habilidade">
@@ -110,7 +110,7 @@
         </select>
       </div>
 
-      <!-- UNIDADE TEMÁTICA DEPOIS DAS HABILIDADES, SEM REPETIÇÃO -->
+      <!-- ESTRUTURA CURRICULAR LOGO APÓS -->
       <h3 style="margin-top: 25px;">📚 2. Estrutura Curricular & Contexto</h3>
       <div style="background: #fdfefe; border: 1px solid #dcdde1; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
         <label id="labelUnidadeDinamica"><strong>Unidade Temática:</strong></label>
@@ -172,7 +172,6 @@
         const trimestre = document.getElementById('selTrimestre').value;
         const ano = document.getElementById('selTurma').value;
         
-        // Ajuste dinâmico do rótulo da Unidade Temática conforme o componente
         const labelUnidade = document.getElementById('labelUnidadeDinamica');
         if (componente === "Língua Portuguesa" || componente === "Língua Inglesa") {
           labelUnidade.innerHTML = "<strong>Unidade Temática / Prática de Linguagem:</strong>";
@@ -180,7 +179,6 @@
           labelUnidade.innerHTML = "<strong>Unidade Temática:</strong>";
         }
 
-        // Requisição ao backend para buscar as habilidades cadastradas na matriz daquele trimestre
         try {
           const res = await fetch(URL_API, {
             method: 'POST',
@@ -198,7 +196,6 @@
               htmlRecomposicao += `<option value="${item.habRecomposicao}">${item.habRecomposicao}</option>`;
               htmlSuporte += `<option value="${item.habSuporte}">${item.habSuporte}</option>`;
               
-              // Preenche automaticamente a unidade correspondente
               document.getElementById('inputUnidade').value = item.unidade || "Matriz Oficial";
               document.getElementById('txtObjetoConhecimento').value = item.objetoConhecimento || "";
             });
