@@ -1,227 +1,336 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Portal do Educador</title>
-  <style>
-    /* VARIÁVEIS MÁGICAS DE COR (O Javascript vai alterar isso dependendo da escola) */
-    :root {
-      --cor-principal: #34495e; 
-      --cor-secundaria: #2c3e50;
+// ==========================================
+// SCRIPT COMPLETO E DEFINITIVO - PORTAL DO PROFESSOR
+// ==========================================
+
+const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
+var professorLogado = "";
+var dadosMatrizGlobal = [];
+
+// Controle de Abas
+function mudarAba(abaId, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
+  document.getElementById(abaId).classList.add('active');
+  btn.classList.add('active');
+
+  if (abaId === 'meusPlanos') {
+    carregarMeusPlanos();
+  }
+}
+
+// Fluxo de Autenticação Manual da Instituição / Escola
+function verificarEscolaManual() {
+  const codigo = document.getElementById('inputCodigoEscola').value.trim().toLowerCase();
+  const msg = document.getElementById('msgWorkspace');
+  
+  if (!codigo) {
+    msg.innerText = "Digite o código da instituição.";
+    return;
+  }
+
+  if (codigo.length > 1) {
+    document.getElementById('telaWorkspace').style.display = 'none';
+    document.getElementById('telaLogin').style.display = 'flex';
+    document.getElementById('tituloNomeEscola').innerText = "Escola Mestra Aurora";
+    document.getElementById('logoLogin').src = "https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5";
+    document.getElementById('logoHeader').src = "https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5";
+  } else {
+    msg.innerText = "Código institucional não reconhecido.";
+  }
+}
+
+// Login do Professor na Planilha
+async function fazerLogin() {
+  const usuario = document.getElementById('loginUsuario').value.trim();
+  const senha = document.getElementById('loginSenha').value.trim();
+  const msg = document.getElementById('msgLogin');
+
+  if (!usuario || !senha) {
+    msg.innerText = "Preencha usuário e senha.";
+    return;
+  }
+
+  msg.innerText = "⏳ Autenticando...";
+  try {
+    const res = await fetch(URL_API, {
+      method: 'POST',
+      body: JSON.stringify({ acao: "login", usuario, senha })
+    });
+    const r = await res.json();
+
+    if (r.status === "sucesso") {
+      professorLogado = r.nome;
+      document.getElementById('telaLogin').style.display = 'none';
+      document.getElementById('nomeProfessor').value = r.nome;
+      
+      const headerBoasVindas = document.getElementById('infoUsuarioBoasVindas');
+      headerBoasVindas.style.display = 'inline-block';
+      headerBoasVindas.innerText = `Docente: ${r.nome}`;
+
+      carregarComponentesProfessor(r.componentes, r.turmas);
+    } else {
+      msg.innerText = r.mensagem || "Usuário ou senha incorretos.";
+    }
+  } catch (e) {
+    msg.innerText = "⚠️ Erro de conexão com o servidor.";
+    console.error(e);
+  }
+}
+
+function carregarComponentesProfessor(componentes, turmas) {
+  const selComp = document.getElementById('componente');
+  const selTurma = document.getElementById('turmaSelecionada');
+
+  let htmlComp = '<option value="">Selecione o componente...</option>';
+  if (componentes && componentes.length > 0) {
+    componentes.forEach(c => { htmlComp += `<option value="${c}">${c}</option>`; });
+  } else {
+    ["Matemática", "Língua Portuguesa", "Geografia", "História", "Ciências", "Língua Inglesa", "Arte", "Educação Física", "Ensino Religioso"].forEach(c => {
+      htmlComp += `<option value="${c}">${c}</option>`;
+    });
+  }
+  selComp.innerHTML = htmlComp;
+
+  let htmlTurma = '<option value="">Selecione a turma...</option>';
+  if (turmas && turmas.length > 0) {
+    turmas.forEach(t => { htmlTurma += `<option value="${t}">${t}</option>`; });
+  } else {
+    ["6º Ano", "7º Ano", "8º Ano", "9º Ano", "6º REG 1", "6º REG 2", "7º REG 1", "7º REG 2", "8º REG 1", "8º REG 2", "9º REG 1", "9º REG 2"].forEach(t => {
+      htmlTurma += `<option value="${t}">${t}</option>`;
+    });
+  }
+  selTurma.innerHTML = htmlTurma;
+}
+
+// BUSCA NA MATRIZ MESTRA (COM SUPORTE A TRIMESTRE E RÓTULO CONDICIONAL)
+async function buscarMatriz() {
+  const componente = document.getElementById('componente').value;
+  const ano = document.getElementById('turmaSelecionada').value;
+  const trimestre = document.getElementById('selTrimestre') ? document.getElementById('selTrimestre').value : "3º Trimestre";
+
+  if (!componente || !ano || !trimestre) return;
+
+  const labelUnidade = document.getElementById('labelUnidadeDinamica');
+  if (componente === "Língua Portuguesa" || componente === "Língua Inglesa") {
+    labelUnidade.innerText = "Unidade Temática / Prática de Linguagem";
+    if(document.getElementById('areaGenero')) document.getElementById('areaGenero').style.display = 'block';
+  } else {
+    labelUnidade.innerText = "Unidade Temática";
+    if(document.getElementById('areaGenero')) document.getElementById('areaGenero').style.display = 'none';
+  }
+
+  const selUnidade = document.getElementById('unidade');
+  selUnidade.innerHTML = '<option value="">Buscando unidades do trimestre...</option>';
+
+  try {
+    const res = await fetch(URL_API, {
+      method: 'POST',
+      body: JSON.stringify({  acao: "buscarMatrizTrimestre", componente, trimestre, ano })
+    });
+    const r = await res.json();
+    
+    dadosMatrizGlobal = r.itens || [];
+    let htmlUnidades = '<option value="">Selecione a Unidade Temática...</option>';
+
+    const unidadesUnicas = [...new Set(dadosMatrizGlobal.map(i => i.unidade))];
+    
+    if (unidadesUnicas.length > 0) {
+      unidadesUnicas.forEach(u => {
+        htmlUnidades += `<option value="${u}">${u}</option>`;
+      });
+      document.getElementById('blocoCurriculo').style.display = 'block';
+    } else {
+      htmlUnidades = '<option value="">Nenhuma unidade cadastrada para este trimestre</option>';
     }
 
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; color: #333; }
-    header { background-color: var(--cor-principal); color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.15); transition: background-color 0.5s ease; }
-    header h2 { margin: 10px 0 0 0; font-size: 1.5rem; }
-    header p { margin: 5px 0 0 0; font-size: 0.9rem; color: #e8f5e9; }
-    .logo-escola { max-width: 90%; height: auto; max-height: 85px; object-fit: contain; border-radius: 8px; transition: all 0.5s ease; }
-    
-    .container { max-width: 800px; margin: 20px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    
-    .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
-    .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; font-weight: bold; font-size: 1rem; color: #7f8c8d; cursor: pointer; transition: 0.3s; }
-    .tab-btn.active { color: var(--cor-principal); border-bottom: 3px solid var(--cor-principal); }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; animation: fadeIn 0.4s; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    
-    h3 { border-bottom: 2px solid var(--cor-secundaria); padding-bottom: 5px; color: var(--cor-principal); margin-top: 25px; transition: all 0.5s ease; }
-    .bloco-campo { margin-bottom: 15px; }
-    .bloco-campo label { display: block; font-weight: bold; margin-bottom: 5px; color: #2c3e50; }
-    .bloco-campo input[type="text"], .bloco-campo select, .bloco-campo textarea, input[type="date"] { width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 1rem; }
-    .bloco-campo textarea { resize: vertical; min-height: 120px; }
-    
-    .btn-gerar { background-color: var(--cor-secundaria); color: white; padding: 15px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: bold; width: 100%; transition: 0.3s; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .btn-gerar:hover { opacity: 0.9; transform: translateY(-2px); }
-    
-    .checkbox-item { margin-bottom: 8px; display: flex; align-items: flex-start; }
-    .checkbox-item input { margin-top: 4px; margin-right: 10px; transform: scale(1.2); accent-color: var(--cor-secundaria); }
-    .checkbox-item label { font-size: 0.95rem; line-height: 1.4; color: #444; }
-    
-    .plano-item { padding: 15px; border: 1px solid #ecf0f1; border-left: 5px solid var(--cor-secundaria); margin-bottom: 15px; border-radius: 6px; background: #fafafa; }
-    .btn-camera { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; color: white; font-weight: bold; width: 100%; display: block; margin-top: 8px; }
-    
-    #modalQR { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
-    #imgQRCode { background: white; padding: 15px; border-radius: 10px; max-width: 80%; }
-    #btnFecharQR { margin-top: 20px; padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-  </style>
-</head>
-<body>
+    selUnidade.innerHTML = htmlUnidades;
+  } catch(e) {
+    console.error("Erro ao buscar matriz:", e);
+    selUnidade.innerHTML = '<option value="">Erro ao conectar com a planilha mestra</option>';
+  }
+}
 
-  <!-- TELA 1: WORKSPACE -->
-  <div id="telaWorkspace" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;">
-    <h2 style="margin-bottom: 10px;">Bem-vindo(a) ao Portal</h2>
-    <p style="margin-bottom: 20px; text-align: center; color: #ecf0f1;">Digite o código da sua instituição<br>para acessar o ambiente virtual.</p>
-    <input type="text" id="inputCodigoEscola" placeholder="Código da Escola (Ex: piloto)" style="padding: 12px; margin: 10px; width: 250px; border-radius: 6px; border: none; font-size: 1rem; text-align: center;">
-    <button onclick="verificarEscolaManual()" style="padding: 12px 20px; width: 274px; background: #f39c12; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1rem;">ACESSAR AMBIENTE</button>
-    <p id="msgWorkspace" style="color: #ffcccc; margin-top: 15px; font-size: 0.9rem; font-weight: bold; text-align: center;"></p>
-  </div>
+// CONSOLIDA TODAS AS HABILIDADES DA UNIDADE SELECIONADA
+function montarCheckboxes() {
+  const unidadeSelecionada = document.getElementById('unidade').value;
+  const componente = document.getElementById('componente').value;
+  if (!unidadeSelecionada) return;
 
-  <!-- TELA 2: LOGIN DA ESCOLA -->
-  <div id="telaLogin" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--cor-principal); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; transition: background-color 0.5s ease;">
-    <img id="logoLogin" src="" style="max-width: 90%; height: auto; max-height: 100px; object-fit: contain; margin-bottom: 20px; border-radius: 8px;">
-    <h2 id="tituloNomeEscola">Acesso Restrito</h2>
-    <p style="margin-bottom: 20px; color: #e8f5e9;">Portal do Educador</p>
-    <input type="text" id="loginUsuario" placeholder="Usuário" style="padding: 12px; margin: 10px; width: 250px; border-radius: 6px; border: none; font-size: 1rem;">
-    <input type="password" id="loginSenha" placeholder="Senha" style="padding: 12px; margin: 10px; width: 250px; border-radius: 6px; border: none; font-size: 1rem;">
-    <button onclick="fazerLogin()" style="padding: 12px 20px; width: 274px; background: var(--cor-secundaria); border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1rem;">ENTRAR</button>
-    <p id="msgLogin" style="color: #ffcccc; margin-top: 15px; font-size: 0.9rem;"></p>
-  </div>
+  document.getElementById('painelOpcoes').style.display = 'block';
 
-  <!-- SISTEMA INTERNO -->
-  <header>
-    <img id="logoHeader" src="" alt="Logo da Escola" class="logo-escola">
-    <h2>Portal do Educador</h2>
-    <p>Planejamento & Evidências</p>
-    <div id="infoUsuarioBoasVindas" style="margin-top: 12px; background: rgba(0,0,0,0.25); padding: 6px 18px; border-radius: 20px; font-size: 0.95rem; font-weight: bold; color: #f1c40f; display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>
-  </header>
+  const itensDaUnidade = dadosMatrizGlobal.filter(i => i.unidade === unidadeSelecionada);
 
-  <div class="container">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="mudarAba('gerarPlano', this)">Gerar Plano</button>
-      <button class="tab-btn" onclick="mudarAba('meusPlanos', this)">Meus Planos</button>
-    </div>
+  let htmlPriorizada = "";
+  let htmlRecomposicao = "";
+  let htmlSuporte = "";
+  let objetosSet = new Set();
+  let generosSet = new Set();
 
-    <div id="gerarPlano" class="tab-content active">
-      <h3>1. Identificação</h3>
+  itensDaUnidade.forEach(item => {
+    if (item.habPriorizada && item.habPriorizada !== "-") {
+      htmlPriorizada += `<div class="checkbox-item"><input type="radio" name="radioHabPriorizada" value="${item.habPriorizada}"><label>${item.habPriorizada}</label></div>`;
+    }
+    
+    if (componente === "Língua Portuguesa" || componente === "Matemática") {
+      if (item.habRecomposicao && item.habRecomposicao !== "-") {
+        htmlRecomposicao += `<div class="checkbox-item"><input type="checkbox" name="chkHabRecomposicao" value="${item.habRecomposicao}"><label>${item.habRecomposicao}</label></div>`;
+      }
+      if (item.habSuporte && item.habSuporte !== "-") {
+        htmlSuporte += `<div class="checkbox-item"><input type="checkbox" name="chkHabSuporte" value="${item.habSuporte}"><label>${item.habSuporte}</label></div>`;
+      }
+    }
+
+    if (item.objetoConhecimento && item.objetoConhecimento !== "-") {
+      objetosSet.add(item.objetoConhecimento);
+    }
+    if (item.genero && item.genero !== "-") {
+      generosSet.add(item.genero);
+    }
+  });
+
+  const divHabs = document.getElementById('listaHabilidades');
+  divHabs.innerHTML = `
+    <label style="font-weight:bold; color:#333; margin-bottom:5px;">Habilidade Priorizada:</label>
+    ${htmlPriorizada || '<p style="color:#7f8c8d; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
+    
+    ${(componente === "Língua Portuguesa" || componente === "Matemática") ? `
+      <label style="font-weight:bold; color:#333; margin-top:10px; margin-bottom:5px;">Habilidades de Recomposição:</label>
+      ${htmlRecomposicao || '<p style="color:#7f8c8d; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
       
-      <div class="bloco-campo">
-        <label>Nome do(a) Professor(a)</label>
-        <input type="text" id="nomeProfessor" readonly style="background-color: #ecf0f1; color: #7f8c8d;">
-      </div>
+      <label style="font-weight:bold; color:#333; margin-top:10px; margin-bottom:5px;">Habilidades de Suporte:</label>
+      ${htmlSuporte || '<p style="color:#7f8c8d; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
+    ` : ''}
+  `;
+
+  document.getElementById('listaObjetos').innerHTML = Array.from(objetosSet).map(o => `• ${o}`).join("<br>") || "Nenhum objeto cadastrado.";
+  
+  const campoGenero = document.getElementById('generoTextual');
+  if (campoGenero && (componente === "Língua Portuguesa" || componente === "Língua Inglesa")) {
+    campoGenero.value = Array.from(generosSet).join(" | ");
+  }
+}
+
+// GERAR PLANO OFICIAL
+async function enviarPlanoAulaAPI() {
+  const btnGerar = document.getElementById('btnGerar');
+  btnGerar.innerText = "⏳ Gerando Documento Oficial...";
+  btnGerar.disabled = true;
+
+  const habPriorizadaSelecionada = document.querySelector('input[name="radioHabPriorizada"]:checked');
+  const habPrioTexto = habPriorizadaSelecionada ? habPriorizadaSelecionada.value : "Não selecionada";
+
+  const recursosSelecionados = Array.from(document.querySelectorAll('input[name="chk_recursos"]:checked'))
+    .map(cb => cb.value).join(", ");
+
+  const acoesEstrategicas = Array.from(document.querySelectorAll('.chk-estrategia:checked'))
+    .map(cb => cb.value).join(" | ");
+
+  const dadosPlano = {
+    professor: document.getElementById('nomeProfessor').value,
+    tipoPlano: document.getElementById('tipoPlano').value,
+    componente: document.getElementById('componente').value,
+    turma: document.getElementById('turmaSelecionada').value,
+    trimestre: document.getElementById('selTrimestre').value,
+    unidade: document.getElementById('unidade').value,
+    habPriorizada: habPrioTexto,
+    habRecomposicao: "-",
+    habSuporte: "-",
+    objetoConhecimento: document.getElementById('listaObjetos').innerText,
+    genero: document.getElementById('generoTextual') ? document.getElementById('generoTextual').value : "-",
+    desenvolvimento: document.getElementById('desenvolvimento').value + (acoesEstrategicas ? "\n\nAções Estratégicas: " + acoesEstrategicas : ""),
+    recursos: recursosSelecionados,
+    periodo: document.getElementById('dataInicioPer').value + " até " + document.getElementById('dataFimPer').value
+  };
+
+  try {
+    const res = await fetch(URL_API, {
+      method: 'POST',
+      body: JSON.stringify({ acao: "gerarPlano", planoData: dadosPlano })
+    });
+    const r = await res.json();
+
+    if(r.status === "sucesso") {
+      alert("✅ Plano de aula gerado com sucesso!");
+      window.open(r.url, '_blank');
+    } else {
+      alert("⚠️ Erro ao gerar plano: " + r.mensagem);
+    }
+  } catch(e) {
+    alert("⚠️ Erro de conexão ao enviar o plano de aula.");
+    console.error(e);
+  } finally {
+    btnGerar.innerText = "Gerar Plano Oficial";
+    btnGerar.disabled = false;
+  }
+}
+
+// CARREGAR HISTÓRICO DE PLANOS ("MEUS PLANOS")
+async function carregarMeusPlanos() {
+  const container = document.getElementById('listaDePlanos');
+  container.innerHTML = "Carregando seus planos...";
+
+  try {
+    const res = await fetch(URL_API, {
+      method: 'POST',
+      body: JSON.stringify({ acao: "listarSupervisao" })
+    });
+    const r = await res.json();
+
+    if (r.status === "sucesso" && r.registros) {
+      // Filtra apenas os planos do professor logado
+      const meus = r.registros.filter(item => item.professor.toLowerCase() === professorLogado.toLowerCase());
       
-      <div class="bloco-campo">
-        <label>Tipo de Plano</label>
-        <select id="tipoPlano">
-          <option value="Plano de Aula Diário">Plano de Aula Diário</option>
-          <option value="Plano Semanal">Plano Semanal</option>
-          <option value="Plano Quinzenal">Plano Quinzenal</option>
-          <option value="Plano Mensal">Plano Mensal</option>
-          <option value="Plano Bimestral">Plano Bimestral</option>
-          <option value="Plano de Unidade">Plano de Unidade</option>
-          <option value="Sequência Didática">Sequência Didática</option>
-          <option value="Projeto Interdisciplinar">Projeto Interdisciplinar</option>
-          <option value="Plano de Recuperação / Intervenção">Plano de Recuperação / Intervenção</option>
-        </select>
-      </div>
+      if (meus.length === 0) {
+        container.innerHTML = "<p>Nenhum plano gerado por você ainda.</p>";
+        return;
+      }
 
-      <!-- COMPONENTE, TURMA E TRIMESTRE ALINHADOS -->
-      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <div class="bloco-campo" style="flex: 2; min-width: 180px;">
-          <label>Componente Curricular</label>
-          <select id="componente" onchange="buscarMatriz()" required>
-            <option value="">Aguardando autenticação...</option>
-          </select>
-        </div>
-
-        <div class="bloco-campo" style="flex: 1; min-width: 140px;">
-          <label>Turma Exata</label>
-          <select id="turmaSelecionada" onchange="buscarMatriz()" required>
-            <option value="">Aguardando...</option>
-          </select>
-        </div>
-
-        <!-- NOVO: SELETOR DE TRIMESTRE INTEGRADO -->
-        <div class="bloco-campo" style="flex: 1; min-width: 140px;">
-          <label>Trimestre</label>
-          <select id="selTrimestre" onchange="buscarMatriz()" required>
-            <option value="1º Trimestre">1º Trimestre</option>
-            <option value="2º Trimestre">2º Trimestre</option>
-            <option value="3º Trimestre" selected>3º Trimestre</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="bloco-campo">
-        <label>Período (Data de Aplicação)</label>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <input type="date" id="dataInicioPer" style="padding: 10px; border-radius: 6px; border: 1px solid #bdc3c7; width: 100%;">
-          <span style="font-weight:bold; color:#7f8c8d;">até</span>
-          <input type="date" id="dataFimPer" style="padding: 10px; border-radius: 6px; border: 1px solid #bdc3c7; width: 100%;">
-        </div>
-      </div>
-
-      <div id="blocoCurriculo" style="display:none;">
-        <h3>2. Base Curricular</h3>
-        
-        <div class="bloco-campo">
-          <label id="labelUnidadeDinamica">Unidade Temática (Eixo)</label>
-          <select id="unidade" onchange="montarCheckboxes()"><option value="">Aguardando seleção...</option></select>
-        </div>
-
-        <div id="painelOpcoes" style="display:none;">
-          <div class="bloco-campo">
-            <label style="color:#e67e22;">Habilidades da BNCC/Referencial:</label>
-            <div id="listaHabilidades" style="background:#f9f9f9; padding:10px; border-radius:6px; border:1px solid #ddd; max-height:200px; overflow-y:auto;"></div>
-          </div>
-
-          <div class="bloco-campo">
-            <label style="color:#2980b9;">Objetos de Conhecimento (Conteúdo):</label>
-            <div id="listaObjetos" style="background:#f9f9f9; padding:10px; border-radius:6px; border:1px solid #ddd; max-height:200px; overflow-y:auto;"></div>
-          </div>
-
-          <div class="bloco-campo" id="areaGenero" style="display: none;">
-            <label>Gênero Textual (Específico para Linguagens)</label>
-            <input type="text" id="generoTextual" placeholder="Ex: Conto, Poema, Notícia...">
-          </div>
-
-          <h3>3. Metodologia e Execução</h3>
-          <div class="bloco-campo">
-            <label>Desenvolvimento da Aula (Pode colar textos grandes aqui)</label>
-            <textarea id="desenvolvimento" placeholder="Cole aqui o roteiro da aula, o passo a passo gerado pelo chatGPT, ou digite suas anotações..."></textarea>
-          </div>
-          
-          <div class="bloco-campo">
-            <label>Recursos Didáticos:</label>
-            <div style="background:#f9f9f9; padding:10px; border-radius:6px; border:1px solid #ddd; display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-              <label><input type="checkbox" name="chk_recursos" value="Quadro e Marcador / Giz"> Quadro e Marcador</label>
-              <label><input type="checkbox" name="chk_recursos" value="Livro Didático"> Livro Didático</label>
-              <label><input type="checkbox" name="chk_recursos" value="Projetor Multimídia / Lousa Digital / TV"> Projetor / Lousa Digital / TV</label>
-              <label><input type="checkbox" name="chk_recursos" value="Materiais Impressos (Textos / Atividades)"> Materiais Impressos / Xerox</label>
-              <label><input type="checkbox" name="chk_recursos" value="Jogos / Material Concreto / Manipuláveis"> Jogos / Material Concreto</label>
-              <label><input type="checkbox" name="chk_recursos" value="Notebook / Tablet / Celular"> Notebook / Tablet / Celular</label>
-              <label><input type="checkbox" name="chk_recursos" value="Vídeos / Áudios / Mídias"> Vídeos / Áudios / Mídias</label>
-              <label><input type="checkbox" name="chk_recursos" value="Espaço Externo / Quadra / Pátio"> Espaço Externo / Quadra</label>
-              <label><input type="checkbox" name="chk_recursos" value="Laboratório / Equipamentos Práticos"> Laboratório / Práticas</label>
-              <label><input type="checkbox" name="chk_recursos" value="Materiais de Arte (Cartolina, Tintas, etc.)"> Materiais de Arte / Papelaria</label>
-              <label><input type="checkbox" name="chk_recursos" value="Dicionários / Gramáticas / Livros de Apoio"> Dicionários / Livros de Apoio</label>
-              <label><input type="checkbox" name="chk_recursos" value="Cartazes / Mapas / Maquetes"> Cartazes / Mapas / Maquetes</label>
+      let html = "";
+      meus.reverse().forEach(p => {
+        html += `
+          <div class="plano-item">
+            <strong>Data:</strong> ${p.data} | <strong>Disciplina:</strong> ${p.componente} (${p.turma} - ${p.trimestre || 'Trimestre'})<br>
+            <strong>Unidade:</strong> ${p.unidade}<br>
+            <strong>Status:</strong> ${p.status}<br>
+            <div style="margin-top:10px; display:flex; gap:10px;">
+              <a href="${p.docUrl}" target="_blank" style="background:#2980b9; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-size:0.85rem; font-weight:bold;">📄 Abrir Google Doc</a>
+              <a href="${p.pastaUrl}" target="_blank" style="background:#e67e22; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-size:0.85rem; font-weight:bold;">📁 Pasta de Evidências</a>
             </div>
+            <button class="btn-camera" style="background:#8e44ad;" onclick="abrirModalQR('${p.pastaUrl}')">📱 Enviar Fotos / Evidências via Celular (QR Code)</button>
           </div>
-          
-          <!-- MARCADORES ESTRATÉGICOS -->
-          <div class="bloco-campo" style="margin-top: 15px; margin-bottom: 15px;">
-            <label style="color:#d35400; font-weight:bold;">🎯 Ações Estratégicas (Opcional):</label>
-            <div style="background: #fff3e0; padding: 10px; border-radius: 8px; border: 1px solid #ffb74d;">
-              <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; cursor:pointer;">
-                <input type="checkbox" class="chk-estrategia" value="Recuperação Trimestral" style="transform: scale(1.2); accent-color: #d35400;"> Recuperação Trimestral
-              </label>
-              <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                <input type="checkbox" class="chk-estrategia" value="Recomposição da Aprendizagem" style="transform: scale(1.2); accent-color: #d35400;"> Recomposição da Aprendizagem
-              </label>
-            </div>
-          </div>
+        `;
+      });
+      container.innerHTML = html;
+    } else {
+      container.innerHTML = "<p>Nenhum registro encontrado.</p>";
+    }
+  } catch (e) {
+    container.innerHTML = "<p>Erro ao carregar o histórico de planos.</p>";
+  }
+}
 
-          <button id="btnGerar" class="btn-gerar">Gerar Plano Oficial</button>
-        </div>
-      </div>
-    </div>
+// MODAL QR CODE PARA EVIDÊNCIAS
+function abrirModalQR(pastaUrl) {
+  const modal = document.getElementById('modalQR');
+  const imgQR = document.getElementById('imgQRCode');
+  if (modal && imgQR && pastaUrl) {
+    // Gera QR code usando API pública com base na URL da pasta do Drive
+    imgQR.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pastaUrl)}`;
+    modal.style.display = 'flex';
+  } else {
+    alert("URL da pasta indisponível.");
+  }
+}
 
-    <div id="meusPlanos" class="tab-content">
-      <h3>Meu Histórico e Evidências</h3>
-      <p style="font-size:0.9rem; color:#666;">Acesse seus documentos ou envie fotos e arquivos diretos para a pasta da aula.</p>
-      <div id="listaDePlanos" style="margin-top:20px;"></div>
-    </div>
-  </div>
+function fecharModalQR() {
+  const modal = document.getElementById('modalQR');
+  if (modal) modal.style.display = 'none';
+}
 
-  <div id="modalQR">
-    <h3 style="color:white; margin-bottom:10px;">Aponte a câmera do celular</h3>
-    <p style="color:#ddd; margin-bottom:20px; text-align:center;">Para enviar fotos direto para a pasta desta aula.</p>
-    <img id="imgQRCode" src="" alt="QR Code">
-    <button id="btnFecharQR" onclick="fecharModalQR()">FECHAR</button>
-  </div>
-
-  <script src="script.js"></script>
-</body>
-</html>
+// Inicialização de Eventos
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById('btnGerar');
+  if (btn) {
+    btn.onclick = enviarPlanoAulaAPI;
+  }
+});
