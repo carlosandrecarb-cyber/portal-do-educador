@@ -1,12 +1,12 @@
 // ==========================================
-// SCRIPT DEFINITIVO - PORTAL DO PROFESSOR (MODERNIZADO E COMPLETO)
+// SCRIPT COMPLETO E DEFINITIVO - PORTAL DO PROFESSOR
 // ==========================================
 
 const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
 var professorLogado = "";
 var dadosMatrizGlobal = [];
 
-// Controle de Abas Dinâmicas
+// Controle de Abas
 function mudarAba(abaId, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
@@ -18,7 +18,7 @@ function mudarAba(abaId, btn) {
   }
 }
 
-// Autenticação Institucional
+// Fluxo de Autenticação Manual da Instituição / Escola
 function verificarEscolaManual() {
   const codigo = document.getElementById('inputCodigoEscola').value.trim().toLowerCase();
   const msg = document.getElementById('msgWorkspace');
@@ -39,7 +39,7 @@ function verificarEscolaManual() {
   }
 }
 
-// Login do Docente
+// Login do Professor na Planilha
 async function fazerLogin() {
   const usuario = document.getElementById('loginUsuario').value.trim();
   const senha = document.getElementById('loginSenha').value.trim();
@@ -102,7 +102,7 @@ function carregarComponentesProfessor(componentes, turmas) {
   selTurma.innerHTML = htmlTurma;
 }
 
-// BUSCA NA MATRIZ MESTRA FILTRANDO POR TRIMESTRE
+// BUSCA NA MATRIZ MESTRA (COM SUPORTE A TRIMESTRE E RÓTULO CONDICIONAL)
 async function buscarMatriz() {
   const componente = document.getElementById('componente').value;
   const ano = document.getElementById('turmaSelecionada').value;
@@ -150,7 +150,7 @@ async function buscarMatriz() {
   }
 }
 
-// CONSOLIDAÇÃO COMPLETA DE HABILIDADES, OBJETOS E CONTEÚDOS RELACIONADOS (SEM CORTES)
+// CONSOLIDAÇÃO E RENDERIZAÇÃO EM CHECKBOXES INDIVIDUAIS (HABIILIDADES E OBJETOS)
 function montarCheckboxes() {
   const unidadeSelecionada = document.getElementById('unidade').value;
   const componente = document.getElementById('componente').value;
@@ -181,7 +181,6 @@ function montarCheckboxes() {
       }
     }
 
-    // Captura rica de Objetos e Conteúdos Relacionados sem cortes
     if (item.objetoConhecimento && item.objetoConhecimento !== "-") {
       objetosSet.add(item.objetoConhecimento);
     }
@@ -193,6 +192,7 @@ function montarCheckboxes() {
     }
   });
 
+  // Renderiza Habilidades
   const divHabs = document.getElementById('listaHabilidades');
   divHabs.innerHTML = `
     <label style="font-weight:bold; color:#333; margin-bottom:5px;">Habilidade Priorizada:</label>
@@ -207,12 +207,16 @@ function montarCheckboxes() {
     ` : ''}
   `;
 
-  // Une os objetos de conhecimento e conteúdos relacionados em um texto completo e robusto
-  const textoObjetosCompleto = Array.from(objetosSet).join(" | ");
-  const textoConteudosCompleto = Array.from(conteudosSet).join(" | ");
-  const conteudoFinalConsolidado = [textoObjetosCompleto, textoConteudosCompleto].filter(Boolean).join(" — ");
+  // RENDERIZA OBJETOS DE CONHECIMENTO E CONTEÚDOS COMO CHECKBOXES SELECIONÁVEIS
+  let htmlObjetosCheckboxes = "";
+  objetosSet.forEach(obj => {
+    htmlObjetosCheckboxes += `<div class="checkbox-item"><input type="checkbox" name="chkObjetoConhecimento" value="${obj}"><label>${obj}</label></div>`;
+  });
+  conteudosSet.forEach(cont => {
+    htmlObjetosCheckboxes += `<div class="checkbox-item"><input type="checkbox" name="chkObjetoConhecimento" value="${cont}"><label>${cont}</label></div>`;
+  });
 
-  document.getElementById('listaObjetos').innerHTML = conteudoFinalConsolidado ? `• ${conteudoFinalConsolidado}` : "Nenhum objeto cadastrado.";
+  document.getElementById('listaObjetos').innerHTML = htmlObjetosCheckboxes || '<p style="color:#7f8c8d; font-size:0.9rem;">Nenhum objeto cadastrado.</p>';
   
   const campoGenero = document.getElementById('generoTextual');
   if (campoGenero && (componente === "Língua Portuguesa" || componente === "Língua Inglesa")) {
@@ -220,7 +224,7 @@ function montarCheckboxes() {
   }
 }
 
-// GERAR PLANO DE AULA OFICIAL
+// GERAR PLANO DE AULA OFICIAL (COLETANDO OS OBJETOS SELECIONADOS)
 async function enviarPlanoAulaAPI() {
   const btnGerar = document.getElementById('btnGerar');
   btnGerar.innerText = "⏳ Gerando Documento Oficial...";
@@ -228,6 +232,10 @@ async function enviarPlanoAulaAPI() {
 
   const habPriorizadaSelecionada = document.querySelector('input[name="radioHabPriorizada"]:checked');
   const habPrioTexto = habPriorizadaSelecionada ? habPriorizadaSelecionada.value : "Não selecionada";
+
+  // Coleta todos os Objetos de Conhecimento marcados pelo professor
+  const objetosMarcados = Array.from(document.querySelectorAll('input[name="chkObjetoConhecimento"]:checked'))
+    .map(cb => cb.value).join(" | ");
 
   const recursosSelecionados = Array.from(document.querySelectorAll('input[name="chk_recursos"]:checked'))
     .map(cb => cb.value).join(", ");
@@ -245,7 +253,7 @@ async function enviarPlanoAulaAPI() {
     habPriorizada: habPrioTexto,
     habRecomposicao: "-",
     habSuporte: "-",
-    objetoConhecimento: document.getElementById('listaObjetos').innerText,
+    objetoConhecimento: objetosMarcados || "Nenhum selecionado",
     genero: document.getElementById('generoTextual') ? document.getElementById('generoTextual').value : "-",
     desenvolvimento: document.getElementById('desenvolvimento').value + (acoesEstrategicas ? "\n\nAções Estratégicas: " + acoesEstrategicas : ""),
     recursos: recursosSelecionados,
