@@ -1,5 +1,5 @@
 // ==========================================
-// SCRIPT COMPLETO E DEFINITIVO - PORTAL DO PROFESSOR
+// SCRIPT DEFINITIVO - PORTAL DO PROFESSOR
 // ==========================================
 
 const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
@@ -11,14 +11,25 @@ function mudarAba(abaId, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
   document.getElementById(abaId).classList.add('active');
-  btn.classList.add('active');
+  
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    // Se ativado programaticamente, acha o botão correspondente
+    document.querySelectorAll('.tabs button').forEach(b => {
+      if ((abaId === 'gerarPlano' && b.innerText.includes('Gerar Plano')) ||
+          (abaId === 'meusPlanos' && b.innerText.includes('Meus Planos'))) {
+        b.classList.add('active');
+      }
+    });
+  }
 
   if (abaId === 'meusPlanos') {
     carregarMeusPlanos();
   }
 }
 
-// Fluxo de Autenticação Manual da Instituição / Escola
+// Autenticação Institucional
 function verificarEscolaManual() {
   const codigo = document.getElementById('inputCodigoEscola').value.trim().toLowerCase();
   const msg = document.getElementById('msgWorkspace');
@@ -39,7 +50,7 @@ function verificarEscolaManual() {
   }
 }
 
-// Login do Professor na Planilha
+// Login do Professor
 async function fazerLogin() {
   const usuario = document.getElementById('loginUsuario').value.trim();
   const senha = document.getElementById('loginSenha').value.trim();
@@ -65,7 +76,7 @@ async function fazerLogin() {
       
       const headerBoasVindas = document.getElementById('infoUsuarioBoasVindas');
       headerBoasVindas.style.display = 'inline-block';
-      headerBoasVindas.innerText = `Docente: ${r.nome}`;
+      headerBoasVindas.innerText = `👋 Docente: ${r.nome}`;
 
       carregarComponentesProfessor(r.componentes, r.turmas);
     } else {
@@ -102,7 +113,7 @@ function carregarComponentesProfessor(componentes, turmas) {
   selTurma.innerHTML = htmlTurma;
 }
 
-// BUSCA NA MATRIZ MESTRA (COM SUPORTE A TRIMESTRE E RÓTULO CONDICIONAL)
+// BUSCA NA MATRIZ MESTRA
 async function buscarMatriz() {
   const componente = document.getElementById('componente').value;
   const ano = document.getElementById('turmaSelecionada').value;
@@ -150,7 +161,7 @@ async function buscarMatriz() {
   }
 }
 
-// CONSOLIDAÇÃO E RENDERIZAÇÃO EM CHECKBOXES INDIVIDUAIS (HABIILIDADES E OBJETOS)
+// CONSOLIDAÇÃO EM CHECKBOXES INDIVIDUAIS
 function montarCheckboxes() {
   const unidadeSelecionada = document.getElementById('unidade').value;
   const componente = document.getElementById('componente').value;
@@ -192,22 +203,20 @@ function montarCheckboxes() {
     }
   });
 
-  // Renderiza Habilidades
   const divHabs = document.getElementById('listaHabilidades');
   divHabs.innerHTML = `
-    <label style="font-weight:bold; color:#333; margin-bottom:5px;">Habilidade Priorizada:</label>
-    ${htmlPriorizada || '<p style="color:#7f8c8d; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
+    <label style="font-weight:700; color:#334155; margin-bottom:5px;">Habilidade Priorizada:</label>
+    ${htmlPriorizada || '<p style="color:#94a3b8; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
     
     ${(componente === "Língua Portuguesa" || componente === "Matemática") ? `
-      <label style="font-weight:bold; color:#333; margin-top:10px; margin-bottom:5px;">Habilidades de Recomposição:</label>
-      ${htmlRecomposicao || '<p style="color:#7f8c8d; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
+      <label style="font-weight:700; color:#334155; margin-top:10px; margin-bottom:5px;">Habilidades de Recomposição:</label>
+      ${htmlRecomposicao || '<p style="color:#94a3b8; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
       
-      <label style="font-weight:bold; color:#333; margin-top:10px; margin-bottom:5px;">Habilidades de Suporte:</label>
-      ${htmlSuporte || '<p style="color:#7f8c8d; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
+      <label style="font-weight:700; color:#334155; margin-top:10px; margin-bottom:5px;">Habilidades de Suporte:</label>
+      ${htmlSuporte || '<p style="color:#94a3b8; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
     ` : ''}
   `;
 
-  // RENDERIZA OBJETOS DE CONHECIMENTO E CONTEÚDOS COMO CHECKBOXES SELECIONÁVEIS
   let htmlObjetosCheckboxes = "";
   objetosSet.forEach(obj => {
     htmlObjetosCheckboxes += `<div class="checkbox-item"><input type="checkbox" name="chkObjetoConhecimento" value="${obj}"><label>${obj}</label></div>`;
@@ -216,7 +225,7 @@ function montarCheckboxes() {
     htmlObjetosCheckboxes += `<div class="checkbox-item"><input type="checkbox" name="chkObjetoConhecimento" value="${cont}"><label>${cont}</label></div>`;
   });
 
-  document.getElementById('listaObjetos').innerHTML = htmlObjetosCheckboxes || '<p style="color:#7f8c8d; font-size:0.9rem;">Nenhum objeto cadastrado.</p>';
+  document.getElementById('listaObjetos').innerHTML = htmlObjetosCheckboxes || '<p style="color:#94a3b8; font-size:0.9rem;">Nenhum objeto cadastrado.</p>';
   
   const campoGenero = document.getElementById('generoTextual');
   if (campoGenero && (componente === "Língua Portuguesa" || componente === "Língua Inglesa")) {
@@ -224,7 +233,7 @@ function montarCheckboxes() {
   }
 }
 
-// GERAR PLANO DE AULA OFICIAL (COLETANDO OS OBJETOS SELECIONADOS)
+// GERAR PLANO E ABRIR AUTOMATICAMENTE A ABA "MEUS PLANOS"
 async function enviarPlanoAulaAPI() {
   const btnGerar = document.getElementById('btnGerar');
   btnGerar.innerText = "⏳ Gerando Documento Oficial...";
@@ -233,7 +242,6 @@ async function enviarPlanoAulaAPI() {
   const habPriorizadaSelecionada = document.querySelector('input[name="radioHabPriorizada"]:checked');
   const habPrioTexto = habPriorizadaSelecionada ? habPriorizadaSelecionada.value : "Não selecionada";
 
-  // Coleta todos os Objetos de Conhecimento marcados pelo professor
   const objetosMarcados = Array.from(document.querySelectorAll('input[name="chkObjetoConhecimento"]:checked'))
     .map(cb => cb.value).join(" | ");
 
@@ -270,6 +278,9 @@ async function enviarPlanoAulaAPI() {
     if(r.status === "sucesso") {
       alert("✅ Plano de aula gerado com sucesso!");
       window.open(r.url, '_blank');
+      
+      // Mudar automaticamente para a aba "Meus Planos"
+      mudarAba('meusPlanos', null);
     } else {
       alert("⚠️ Erro ao gerar plano: " + r.mensagem);
     }
@@ -277,7 +288,7 @@ async function enviarPlanoAulaAPI() {
     alert("⚠️ Erro de conexão ao enviar o plano de aula.");
     console.error(e);
   } finally {
-    btnGerar.innerText = "Gerar Plano Oficial";
+    btnGerar.innerText = "🚀 Gerar Plano Oficial & Enviar para Supervisão";
     btnGerar.disabled = false;
   }
 }
@@ -285,7 +296,7 @@ async function enviarPlanoAulaAPI() {
 // HISTÓRICO DE PLANOS ("MEUS PLANOS")
 async function carregarMeusPlanos() {
   const container = document.getElementById('listaDePlanos');
-  container.innerHTML = "Carregando seus planos...";
+  container.innerHTML = "⏳ Carregando seus planos...";
 
   try {
     const res = await fetch(URL_API, {
@@ -298,7 +309,7 @@ async function carregarMeusPlanos() {
       const meus = r.registros.filter(item => item.professor.toLowerCase() === professorLogado.toLowerCase());
       
       if (meus.length === 0) {
-        container.innerHTML = "<p>Nenhum plano gerado por você ainda.</p>";
+        container.innerHTML = "<p>Nenhum plano gerado por você ainda. Crie seu primeiro plano na aba ao lado! 📝</p>";
         return;
       }
 
@@ -306,12 +317,12 @@ async function carregarMeusPlanos() {
       meus.reverse().forEach(p => {
         html += `
           <div class="plano-item">
-            <strong>Data:</strong> ${p.data} | <strong>Disciplina:</strong> ${p.componente} (${p.turma} - ${p.trimestre || 'Trimestre'})<br>
-            <strong>Unidade:</strong> ${p.unidade}<br>
-            <strong>Status:</strong> ${p.status}<br>
-            <div style="margin-top:10px; display:flex; gap:10px;">
-              <a href="${p.docUrl}" target="_blank" style="background:#2980b9; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-size:0.85rem; font-weight:bold;">📄 Abrir Google Doc</a>
-              <a href="${p.pastaUrl}" target="_blank" style="background:#e67e22; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-size:0.85rem; font-weight:bold;">📁 Pasta de Evidências</a>
+            <strong>📅 Data:</strong> ${p.data} | <strong>📚 Disciplina:</strong> ${p.componente} (${p.turma} - ${p.trimestre || 'Trimestre'})<br>
+            <strong>🎯 Unidade:</strong> ${p.unidade}<br>
+            <strong>📌 Status:</strong> ${p.status}<br>
+            <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+              <a href="${p.docUrl}" target="_blank" style="background:#2980b9; color:white; padding:8px 14px; border-radius:10px; text-decoration:none; font-size:0.85rem; font-weight:700;">📄 Abrir Google Doc</a>
+              <a href="${p.pastaUrl}" target="_blank" style="background:#e67e22; color:white; padding:8px 14px; border-radius:10px; text-decoration:none; font-size:0.85rem; font-weight:700;">📁 Pasta de Evidências</a>
             </div>
             <button class="btn-camera" style="background:#8e44ad;" onclick="abrirModalQR('${p.pastaUrl}')">📱 Enviar Fotos / Evidências via Celular (QR Code)</button>
           </div>
