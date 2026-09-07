@@ -1,318 +1,334 @@
 // ==========================================
-// ROTEADOR MASTER E API DA ESCOLA (WHITE-LABEL)
+// SCRIPT COMPLETO E DEFINITIVO - PORTAL DO PROFESSOR
 // ==========================================
-const URL_API_MASTER = "https://script.google.com/macros/s/AKfycbywngVd3r_CO5Q_WN1z7CZZJkX0aghKqlZ_KoDruDndckt9d_Ga-zw_jF2buCDL7GVXLQ/exec";
-let URL_API_ESCOLA = ""; 
 
-var dadosLocais = [];
-var evidenciaGlobal = ""; 
+const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
+var professorLogado = "";
+var dadosMatrizGlobal = [];
 
-// ==========================================
-// INICIALIZAÇÃO E LINK MÁGICO
-// ==========================================
-window.onload = function() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const idEscolaMagico = urlParams.get('escola');
-  
-  if (idEscolaMagico) {
-    iniciarSetupEscola(idEscolaMagico);
-  } else {
-    document.getElementById('telaWorkspace').style.display = 'flex';
+// Controle de Abas
+function mudarAba(abaId, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
+  document.getElementById(abaId).classList.add('active');
+  btn.classList.add('active');
+
+  if (abaId === 'meusPlanos') {
+    carregarMeusPlanos();
   }
 }
 
-function verificarEscolaBotao(btn) {
-  var origTxt = btn.innerText;
-  btn.innerText = "Buscando...";
-  var idDigitado = document.getElementById('inputCodigoEscola').value.trim();
+// Fluxo de Autenticação Manual da Instituição / Escola
+function verificarEscolaManual() {
+  const codigo = document.getElementById('inputCodigoEscola').value.trim().toLowerCase();
+  const msg = document.getElementById('msgWorkspace');
   
-  if (idDigitado === "") {
-    document.getElementById('msgWorkspace').innerText = "⚠️ Digite o código da sua escola.";
-    btn.innerText = origTxt;
+  if (!codigo) {
+    msg.innerText = "Digite o código da instituição.";
     return;
   }
-  iniciarSetupEscola(idDigitado, btn, origTxt);
+
+  if (codigo.length > 1) {
+    document.getElementById('telaWorkspace').style.display = 'none';
+    document.getElementById('telaLogin').style.display = 'flex';
+    document.getElementById('tituloNomeEscola').innerText = "Escola Mestra Aurora";
+    document.getElementById('logoLogin').src = "https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5";
+    document.getElementById('logoHeader').src = "https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5";
+  } else {
+    msg.innerText = "Código institucional não reconhecido.";
+  }
 }
 
-function verificarEscolaManual() {
-  var btn = document.querySelector('#telaWorkspace button');
-  verificarEscolaBotao(btn);
-}
+// Login do Professor na Planilha
+async function fazerLogin() {
+  const usuario = document.getElementById('loginUsuario').value.trim();
+  const senha = document.getElementById('loginSenha').value.trim();
+  const msg = document.getElementById('msgLogin');
 
-function iniciarSetupEscola(idEscola, btnElement = null, origTxt = "") {
-  if(!btnElement) {
-    document.getElementById('msgWorkspace').innerText = "Conectando ao ambiente...";
+  if (!usuario || !senha) {
+    msg.innerText = "Preencha usuário e senha.";
+    return;
   }
 
-  fetch(URL_API_MASTER, {
-    method: 'POST',
-    body: JSON.stringify({ acao: "buscarConfig", id_escola: idEscola })
-  })
-  .then(res => res.json())
-  .then(resp => {
-    if (resp.status === "sucesso") {
-      URL_API_ESCOLA = resp.apiBanco;
-      
-      document.documentElement.style.setProperty('--cor-principal', resp.cor1);
-      document.documentElement.style.setProperty('--cor-secundaria', resp.cor2);
-      
-      document.getElementById('logoLogin').src = resp.logo;
-      document.getElementById('logoHeader').src = resp.logo;
-      document.getElementById('tituloNomeEscola').innerText = resp.nome;
+  msg.innerText = "⏳ Autenticando...";
+  try {
+    const res = await fetch(URL_API, {
+      method: 'POST',
+      body: JSON.stringify({ acao: "login", usuario, senha })
+    });
+    const r = await res.json();
 
-      document.getElementById('telaWorkspace').style.display = 'none';
-      document.getElementById('telaLogin').style.display = 'flex';
+    if (r.status === "sucesso") {
+      professorLogado = r.nome;
+      document.getElementById('telaLogin').style.display = 'none';
+      document.getElementById('nomeProfessor').value = r.nome;
+      
+      const headerBoasVindas = document.getElementById('infoUsuarioBoasVindas');
+      headerBoasVindas.style.display = 'inline-block';
+      headerBoasVindas.innerText = `Docente: ${r.nome}`;
 
+      carregarComponentesProfessor(r.componentes, r.turmas);
     } else {
-      document.getElementById('msgWorkspace').innerText = "⚠️ " + resp.mensagem;
-      if (btnElement) btnElement.innerText = origTxt;
+      msg.innerText = r.mensagem || "Usuário ou senha incorretos.";
     }
-  })
-  .catch(err => {
-    document.getElementById('msgWorkspace').innerText = "⚠️ Falha de comunicação com o servidor Mestre.";
-    if (btnElement) btnElement.innerText = origTxt;
-  });
+  } catch (e) {
+    msg.innerText = "⚠️ Erro de conexão com o servidor.";
+    console.error(e);
+  }
 }
 
+function carregarComponentesProfessor(componentes, turmas) {
+  const selComp = document.getElementById('componente');
+  const selTurma = document.getElementById('turmaSelecionada');
 
-// ==========================================
-// SISTEMA DE LOGIN NO BANCO DA ESCOLA
-// ==========================================
-function fazerLogin() {
-  var btn = document.querySelector('#telaLogin button');
-  var txtOrig = btn.innerText;
-  btn.innerText = "Autenticando...";
-  
-  var usu = document.getElementById('loginUsuario').value;
-  var sen = document.getElementById('loginSenha').value;
-  
-  fetch(URL_API_ESCOLA, { 
-    method: 'POST', 
-    body: JSON.stringify({ acao: "login", usuario: usu, senha: sen }) 
-  })
-  .then(res => res.json())
-  .then(resp => {
-    if(resp.status === "sucesso") { 
-      document.getElementById('telaLogin').style.display = 'none'; 
-      
-      const infoDiv = document.getElementById('infoUsuarioBoasVindas');
-      infoDiv.innerHTML = "👤 " + resp.nome + " | 🛡️ " + resp.perfil;
-      infoDiv.style.display = "inline-block";
-      
-      document.getElementById('nomeProfessor').value = resp.nome;
-      
-      var selComp = document.getElementById('componente');
-      selComp.innerHTML = '<option value="">Selecione o Componente...</option>';
-      if (resp.componentes && resp.componentes.length > 0) {
-          resp.componentes.forEach(c => {
-              if (c !== "") selComp.innerHTML += `<option value="${c}">${c}</option>`;
-          });
-      } else {
-          selComp.innerHTML = '<option value="">Nenhum componente vinculado</option>';
-      }
-      
-      var selTurma = document.getElementById('turmaSelecionada');
-      selTurma.innerHTML = '<option value="">Selecione a Turma...</option>';
-      if (resp.turmas && resp.turmas.length > 0) {
-          resp.turmas.forEach(t => {
-              if (t !== "") selTurma.innerHTML += `<option value="${t}">${t}</option>`;
-          });
-      } else {
-          selTurma.innerHTML = '<option value="">Nenhuma turma vinculada</option>';
-      }
+  let htmlComp = '<option value="">Selecione o componente...</option>';
+  if (componentes && componentes.length > 0) {
+    componentes.forEach(c => { htmlComp += `<option value="${c}">${c}</option>`; });
+  } else {
+    ["Matemática", "Língua Portuguesa", "Geografia", "História", "Ciências", "Língua Inglesa", "Arte", "Educação Física", "Ensino Religioso"].forEach(c => {
+      htmlComp += `<option value="${c}">${c}</option>`;
+    });
+  }
+  selComp.innerHTML = htmlComp;
 
-    } else { 
-      document.getElementById('msgLogin').innerText = "⚠️ " + resp.mensagem; 
-      btn.innerText = txtOrig;
-    }
-  })
-  .catch(err => {
-     document.getElementById('msgLogin').innerText = "⚠️ Falha de comunicação com o servidor.";
-     btn.innerText = txtOrig;
-  });
+  let htmlTurma = '<option value="">Selecione a turma...</option>';
+  if (turmas && turmas.length > 0) {
+    turmas.forEach(t => { htmlTurma += `<option value="${t}">${t}</option>`; });
+  } else {
+    ["6º Ano", "7º Ano", "8º Ano", "9º Ano", "6º REG 1", "6º REG 2", "7º REG 1", "7º REG 2", "8º REG 1", "8º REG 2", "9º REG 1", "9º REG 2"].forEach(t => {
+      htmlTurma += `<option value="${t}">${t}</option>`;
+    });
+  }
+  selTurma.innerHTML = htmlTurma;
 }
 
-// ==========================================
-// NAVEGAÇÃO E HISTÓRICO
-// ==========================================
-function mudarAba(abaId, elementoBotao) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById(abaId).classList.add('active');
-  elementoBotao.classList.add('active');
-  window.scrollTo(0, 0); 
-  
-  if(abaId === 'meusPlanos') { carregarHistorico(); }
-}
+// BUSCA NA MATRIZ MESTRA (COM SUPORTE A TRIMESTRE E RÓTULO CONDICIONAL)
+async function buscarMatriz() {
+  const componente = document.getElementById('componente').value;
+  const ano = document.getElementById('turmaSelecionada').value;
+  const trimestre = document.getElementById('selTrimestre') ? document.getElementById('selTrimestre').value : "3º Trimestre";
 
-function carregarHistorico() {
-  var container = document.getElementById('listaDePlanos');
-  container.innerHTML = "Buscando seu histórico no banco de dados...";
-  
-  fetch(URL_API_ESCOLA, {
-    method: 'POST',
-    body: JSON.stringify({ acao: "buscarHistorico" })
-  })
-  .then(res => res.json())
-  .then(resposta => {
-    if (resposta.status === "sucesso") {
-      var nomeProfessorLogado = document.getElementById('nomeProfessor').value.trim();
-      var planos = resposta.historico.filter(p => p.professor.trim() === nomeProfessorLogado);
-      
-      if (planos.length === 0) {
-        container.innerHTML = "Nenhum plano gerado por você ainda.";
-        return;
-      }
-      
-      var html = "";
-      planos.forEach(function(plano) {
-        html += '<div class="plano-item">';
-        html += '<strong>' + plano.componente + ' - ' + plano.turma + '</strong><br>';
-        html += '<span style="font-size: 0.8rem; color: #7f8c8d;">Gerado em: ' + plano.data + '</span><br>';
-        html += '<button class="btn-camera" style="background:var(--cor-secundaria);" onclick="window.open(\''+plano.urlDoc+'\',\'_blank\')">📄 Ver Documento Oficial</button>';
-        html += '<button class="btn-camera" style="background:#e67e22; margin-top:5px;" onclick="abrirModalQR(\''+plano.urlPasta+'\')">📷 Mostrar QR Code (Uso no PC)</button>';
-        html += '<button class="btn-camera" style="background:var(--cor-principal); margin-top:5px;" onclick="window.open(\''+plano.urlPasta+'\',\'_blank\')">📁 Enviar Evidências (Direto no Celular)</button>';
-        html += '</div>';
-      });
-      container.innerHTML = html;
-    } else { container.innerHTML = "Erro ao carregar histórico: " + resposta.mensagem; }
-  }).catch(err => {
-    container.innerHTML = "Erro de conexão ao buscar histórico.";
-    console.error(err);
-  });
-}
+  if (!componente || !ano || !trimestre) return;
 
-// ==========================================
-// LÓGICA DA MATRIZ CURRICULAR E FORMULÁRIO
-// ==========================================
-function buscarMatriz() {
-  var comp = document.getElementById('componente').value;
-  var turma = document.getElementById('turmaSelecionada').value;
-  var areaGenero = document.getElementById('areaGenero');
-  
-  if (comp === "Língua Portuguesa" || comp === "Língua Inglesa") { areaGenero.style.display = "block"; } 
-  else { areaGenero.style.display = "none"; document.getElementById('generoTextual').value = ""; }
+  const labelUnidade = document.getElementById('labelUnidadeDinamica');
+  if (componente === "Língua Portuguesa" || componente === "Língua Inglesa") {
+    labelUnidade.innerText = "Unidade Temática / Prática de Linguagem";
+    if(document.getElementById('areaGenero')) document.getElementById('areaGenero').style.display = 'block';
+  } else {
+    labelUnidade.innerText = "Unidade Temática";
+    if(document.getElementById('areaGenero')) document.getElementById('areaGenero').style.display = 'none';
+  }
 
-  if (comp !== "" && turma !== "") {
-    document.getElementById('blocoCurriculo').style.display = 'block';
+  const selUnidade = document.getElementById('unidade');
+  selUnidade.innerHTML = '<option value="">Buscando unidades do trimestre...</option>';
+
+  try {
+    const res = await fetch(URL_API, {
+      method: 'POST',
+      body: JSON.stringify({ acao: "buscarMatrizTrimestre", componente, trimestre, ano })
+    });
+    const r = await res.json();
     
-    var payload = { acao: "buscarMatriz", componente: comp, ano: turma };
+    dadosMatrizGlobal = r.itens || [];
+    let htmlUnidades = '<option value="">Selecione a Unidade Temática...</option>';
 
-    fetch(URL_API_ESCOLA, { method: 'POST', body: JSON.stringify(payload) })
-    .then(res => res.json())
-    .then(resposta => {
-      if(resposta.status === "sucesso") {
-        var resultados = resposta.resultados;
-        dadosLocais = resultados;
-        var select = document.getElementById('unidade');
-        select.innerHTML = '<option value="">Escolha a Unidade Temática...</option>';
-        if(resultados.length > 0) {
-          resultados.forEach((item, index) => {
-            select.innerHTML += '<option value="'+index+'">'+item.unidade+'</option>';
-          });
-        } else { select.innerHTML = '<option value="">Nenhum dado encontrado para esta turma.</option>'; }
-      } else { alert("⚠️ Erro ao carregar matriz: " + resposta.mensagem); }
-    }).catch(err => {
-      console.error("Erro de conexão:", err);
-      alert("⚠️ Erro de conexão ao buscar a matriz curricular.");
-    });
+    const unidadesUnicas = [...new Set(dadosMatrizGlobal.map(i => i.unidade))];
+    
+    if (unidadesUnicas.length > 0) {
+      unidadesUnicas.forEach(u => {
+        htmlUnidades += `<option value="${u}">${u}</option>`;
+      });
+      document.getElementById('blocoCurriculo').style.display = 'block';
+    } else {
+      htmlUnidades = '<option value="">Nenhuma unidade cadastrada para este trimestre</option>';
+    }
+
+    selUnidade.innerHTML = htmlUnidades;
+  } catch(e) {
+    console.error("Erro ao buscar matriz:", e);
+    selUnidade.innerHTML = '<option value="">Erro ao conectar com a planilha mestra</option>';
   }
 }
 
+// CONSOLIDA TODAS AS HABILIDADES DA UNIDADE SELECIONADA
 function montarCheckboxes() {
-  var idx = document.getElementById('unidade').value;
-  if(idx !== "") {
-    document.getElementById('painelOpcoes').style.display = 'block';
-    evidenciaGlobal = dadosLocais[idx].evidencias; 
-    gerarListaHTML('listaHabilidades', dadosLocais[idx].habilidades, 'chk_habilidade');
-    gerarListaHTML('listaObjetos', dadosLocais[idx].objetos, 'chk_objeto');
-    gerarListaHTML('listaPraticas', dadosLocais[idx].praticas, 'chk_pratica');
-  }
-}
+  const unidadeSelecionada = document.getElementById('unidade').value;
+  const componente = document.getElementById('componente').value;
+  if (!unidadeSelecionada) return;
 
-function gerarListaHTML(containerId, texto, nomeCheckbox) {
-  var container = document.getElementById(containerId); container.innerHTML = '';
-  if(texto) {
-    texto.split('\n').forEach(linha => {
-      if(linha.trim() !== "") container.innerHTML += '<div class="checkbox-item"><input type="checkbox" name="'+nomeCheckbox+'" value="'+linha.trim().replace(/"/g, '&quot;')+'"> <label>'+linha.trim()+'</label></div>';
-    });
-  }
-}
+  document.getElementById('painelOpcoes').style.display = 'block';
 
-function obterSelecionados(nomeCheckbox) {
-  return Array.from(document.querySelectorAll('input[name="'+nomeCheckbox+'"]:checked')).map(cb => cb.value);
-}
+  const itensDaUnidade = dadosMatrizGlobal.filter(i => i.unidade === unidadeSelecionada);
 
-function formatarDataBR(dataIso) {
-  if(!dataIso) return "";
-  var p = dataIso.split('-');
-  return p[2] + '/' + p[1] + '/' + p[0];
-}
+  let htmlPriorizada = "";
+  let htmlRecomposicao = "";
+  let htmlSuporte = "";
+  let objetosSet = new Set();
+  let generosSet = new Set();
 
-// ==========================================
-// ENVIO PARA O BANCO DE DADOS (GERAR PLANO)
-// ==========================================
-document.getElementById('btnGerar').addEventListener('click', function() {
-  var btn = this; 
-  var nomeProf = document.getElementById('nomeProfessor').value;
-  if(!nomeProf) { alert("Por favor, certifique-se de estar logado corretamente."); return; }
+  itensDaUnidade.forEach(item => {
+    if (item.habPriorizada && item.habPriorizada !== "-") {
+      htmlPriorizada += `<div class="checkbox-item"><input type="radio" name="radioHabPriorizada" value="${item.habPriorizada}"><label>${item.habPriorizada}</label></div>`;
+    }
+    
+    if (componente === "Língua Portuguesa" || componente === "Matemática") {
+      if (item.habRecomposicao && item.habRecomposicao !== "-") {
+        htmlRecomposicao += `<div class="checkbox-item"><input type="checkbox" name="chkHabRecomposicao" value="${item.habRecomposicao}"><label>${item.habRecomposicao}</label></div>`;
+      }
+      if (item.habSuporte && item.habSuporte !== "-") {
+        htmlSuporte += `<div class="checkbox-item"><input type="checkbox" name="chkHabSuporte" value="${item.habSuporte}"><label>${item.habSuporte}</label></div>`;
+      }
+    }
 
-  var dIni = document.getElementById('dataInicioPer').value;
-  var dFim = document.getElementById('dataFimPer').value;
-  var stringPeriodo = "";
-  if (dIni && dFim) { stringPeriodo = formatarDataBR(dIni) + " a " + formatarDataBR(dFim); } 
-  else if (dIni) { stringPeriodo = formatarDataBR(dIni); }
+    if (item.objetoConhecimento && item.objetoConhecimento !== "-") {
+      objetosSet.add(item.objetoConhecimento);
+    }
+    if (item.genero && item.genero !== "-") {
+      generosSet.add(item.genero);
+    }
+  });
 
-  btn.innerText = "⏳ Gerando Plano no Drive..."; btn.disabled = true;
+  const divHabs = document.getElementById('listaHabilidades');
+  divHabs.innerHTML = `
+    <label style="font-weight:bold; color:#333; margin-bottom:5px;">Habilidade Priorizada:</label>
+    ${htmlPriorizada || '<p style="color:#7f8c8d; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
+    
+    ${(componente === "Língua Portuguesa" || componente === "Matemática") ? `
+      <label style="font-weight:bold; color:#333; margin-top:10px; margin-bottom:5px;">Habilidades de Recomposição:</label>
+      ${htmlRecomposicao || '<p style="color:#7f8c8d; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
+      
+      <label style="font-weight:bold; color:#333; margin-top:10px; margin-bottom:5px;">Habilidades de Suporte:</label>
+      ${htmlSuporte || '<p style="color:#7f8c8d; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
+    ` : ''}
+  `;
+
+  document.getElementById('listaObjetos').innerHTML = Array.from(objetosSet).map(o => `• ${o}`).join("<br>") || "Nenhum objeto cadastrado.";
   
-  var selectUnidade = document.getElementById('unidade');
-  var dados = {
-    professor: nomeProf,
+  const campoGenero = document.getElementById('generoTextual');
+  if (campoGenero && (componente === "Língua Portuguesa" || componente === "Língua Inglesa")) {
+    campoGenero.value = Array.from(generosSet).join(" | ");
+  }
+}
+
+// GERAR PLANO OFICIAL
+async function enviarPlanoAulaAPI() {
+  const btnGerar = document.getElementById('btnGerar');
+  btnGerar.innerText = "⏳ Gerando Documento Oficial...";
+  btnGerar.disabled = true;
+
+  const habPriorizadaSelecionada = document.querySelector('input[name="radioHabPriorizada"]:checked');
+  const habPrioTexto = habPriorizadaSelecionada ? habPriorizadaSelecionada.value : "Não selecionada";
+
+  const recursosSelecionados = Array.from(document.querySelectorAll('input[name="chk_recursos"]:checked'))
+    .map(cb => cb.value).join(", ");
+
+  const acoesEstrategicas = Array.from(document.querySelectorAll('.chk-estrategia:checked'))
+    .map(cb => cb.value).join(" | ");
+
+  const dadosPlano = {
+    professor: document.getElementById('nomeProfessor').value,
     tipoPlano: document.getElementById('tipoPlano').value,
     componente: document.getElementById('componente').value,
     turma: document.getElementById('turmaSelecionada').value,
-    periodo: stringPeriodo, 
-    unidade: selectUnidade.options[selectUnidade.selectedIndex] ? selectUnidade.options[selectUnidade.selectedIndex].text : "",
-    generoTextual: document.getElementById('generoTextual').value,
-    desenvolvimento: document.getElementById('desenvolvimento').value,
-    evidencias: evidenciaGlobal, 
-    habilidades: obterSelecionados('chk_habilidade'),
-    objetos: obterSelecionados('chk_objeto'),
-    recursos_marcados: obterSelecionados('chk_recursos'),
-    tagsSelecionadas: Array.from(document.querySelectorAll('.chk-estrategia:checked')).map(cb => cb.value)
+    trimestre: document.getElementById('selTrimestre').value,
+    unidade: document.getElementById('unidade').value,
+    habPriorizada: habPrioTexto,
+    habRecomposicao: "-",
+    habSuporte: "-",
+    objetoConhecimento: document.getElementById('listaObjetos').innerText,
+    genero: document.getElementById('generoTextual') ? document.getElementById('generoTextual').value : "-",
+    desenvolvimento: document.getElementById('desenvolvimento').value + (acoesEstrategicas ? "\n\nAções Estratégicas: " + acoesEstrategicas : ""),
+    recursos: recursosSelecionados,
+    periodo: document.getElementById('dataInicioPer').value + " até " + document.getElementById('dataFimPer').value
   };
-  
-  fetch(URL_API_ESCOLA, {
-    method: 'POST',
-    body: JSON.stringify(dados)
-  })
-  .then(res => res.json())
-  .then(resposta => {
-    btn.innerText = "📄 Gerar Plano Oficial"; btn.disabled = false;
-    if(resposta.status === "sucesso") {
-      alert("✅ Plano e Pasta gerados com sucesso!");
-      window.open(resposta.url, '_blank');
-      document.getElementById('desenvolvimento').value = ""; 
-      mudarAba('meusPlanos', document.querySelectorAll('.tab-btn')[1]);
-    } else {
-      alert("⚠️ Erro no servidor: " + resposta.mensagem);
-    }
-  })
-  .catch(err => {
-    btn.innerText = "📄 Gerar Plano Oficial"; btn.disabled = false;
-    alert("⚠️ Erro de conexão com a API: " + err);
-  });
-});
 
-// ==========================================
-// MODAL DO QR CODE
-// ==========================================
-function abrirModalQR(urlDeUpload) {
-  var urlApi = "https://quickchart.io/qr?text=" + encodeURIComponent(urlDeUpload) + "&size=250";
-  document.getElementById('imgQRCode').src = urlApi;
-  document.getElementById('modalQR').style.display = "flex";
+  try {
+    const res = await fetch(URL_API, {
+      method: 'POST',
+      body: JSON.stringify({ acao: "gerarPlano", planoData: dadosPlano })
+    });
+    const r = await res.json();
+
+    if(r.status === "sucesso") {
+      alert("✅ Plano de aula gerado com sucesso!");
+      window.open(r.url, '_blank');
+    } else {
+      alert("⚠️ Erro ao gerar plano: " + r.mensagem);
+    }
+  } catch(e) {
+    alert("⚠️ Erro de conexão ao enviar o plano de aula.");
+    console.error(e);
+  } finally {
+    btnGerar.innerText = "Gerar Plano Oficial";
+    btnGerar.disabled = false;
+  }
+}
+
+// CARREGAR HISTÓRICO DE PLANOS ("MEUS PLANOS")
+async function carregarMeusPlanos() {
+  const container = document.getElementById('listaDePlanos');
+  container.innerHTML = "Carregando seus planos...";
+
+  try {
+    const res = await fetch(URL_API, {
+      method: 'POST',
+      body: JSON.stringify({ acao: "listarSupervisao" })
+    });
+    const r = await res.json();
+
+    if (r.status === "sucesso" && r.registros) {
+      const meus = r.registros.filter(item => item.professor.toLowerCase() === professorLogado.toLowerCase());
+      
+      if (meus.length === 0) {
+        container.innerHTML = "<p>Nenhum plano gerado por você ainda.</p>";
+        return;
+      }
+
+      let html = "";
+      meus.reverse().forEach(p => {
+        html += `
+          <div class="plano-item">
+            <strong>Data:</strong> ${p.data} | <strong>Disciplina:</strong> ${p.componente} (${p.turma} - ${p.trimestre || 'Trimestre'})<br>
+            <strong>Unidade:</strong> ${p.unidade}<br>
+            <strong>Status:</strong> ${p.status}<br>
+            <div style="margin-top:10px; display:flex; gap:10px;">
+              <a href="${p.docUrl}" target="_blank" style="background:#2980b9; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-size:0.85rem; font-weight:bold;">📄 Abrir Google Doc</a>
+              <a href="${p.pastaUrl}" target="_blank" style="background:#e67e22; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-size:0.85rem; font-weight:bold;">📁 Pasta de Evidências</a>
+            </div>
+            <button class="btn-camera" style="background:#8e44ad;" onclick="abrirModalQR('${p.pastaUrl}')">📱 Enviar Fotos / Evidências via Celular (QR Code)</button>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    } else {
+      container.innerHTML = "<p>Nenhum registro encontrado.</p>";
+    }
+  } catch (e) {
+    container.innerHTML = "<p>Erro ao carregar o histórico de planos.</p>";
+  }
+}
+
+// MODAL QR CODE PARA EVIDÊNCIAS
+function abrirModalQR(pastaUrl) {
+  const modal = document.getElementById('modalQR');
+  const imgQR = document.getElementById('imgQRCode');
+  if (modal && imgQR && pastaUrl) {
+    imgQR.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pastaUrl)}`;
+    modal.style.display = 'flex';
+  } else {
+    alert("URL da pasta indisponível.");
+  }
 }
 
 function fecharModalQR() {
-  document.getElementById('modalQR').style.display = "none";
+  const modal = document.getElementById('modalQR');
+  if (modal) modal.style.display = 'none';
 }
+
+// Inicialização de Eventos
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById('btnGerar');
+  if (btn) {
+    btn.onclick = enviarPlanoAulaAPI;
+  }
+});
