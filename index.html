@@ -106,17 +106,18 @@
       </div>
 
       <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-        <div class="bloco-campo" style="flex: 2; min-width: 200px;">
+        <div class="bloco-campo" style="flex: 2; min-width: 160px;">
           <label>Componente Curricular</label>
           <select id="componente" onchange="buscarMatriz()" required>
             <option value="">Aguardando autenticação...</option>
           </select>
         </div>
-        <div class="bloco-campo" style="flex: 1; min-width: 140px;">
-          <label>Turma Exata</label>
-          <select id="turmaSelecionada" onchange="buscarMatriz()" required>
-            <option value="">Aguardando...</option>
-          </select>
+        <div class="bloco-campo" style="flex: 1; min-width: 160px;">
+          <label>Turma(s) Exata(s)</label>
+          <!-- CAIXA DE MÚLTIPLA ESCOLHA DE TURMAS -->
+          <div id="turmaSelecionada" style="background:#fdfdfd; border: 2px solid #e2e8f0; border-radius:12px; padding: 10px; max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+            <span style="color:#94a3b8; font-size:0.9rem;">Aguardando...</span>
+          </div>
         </div>
         <div class="bloco-campo" style="flex: 1; min-width: 140px;">
           <label>Trimestre</label>
