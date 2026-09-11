@@ -92,15 +92,12 @@ async function buscarMatriz() {
   const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurma"]:checked')).map(cb => cb.value);
   const trimestre = document.getElementById('selTrimestre') ? document.getElementById('selTrimestre').value : "3º Trimestre";
 
-  // Só busca na matriz se o professor escolheu a disciplina e PELO MENOS UMA turma
   if (!componente || turmasMarcadas.length === 0 || !trimestre) {
     document.getElementById('blocoCurriculo').style.display = 'none';
     return;
   }
 
-  // Pega o ano escolar com base na primeira turma marcada (ex: se marcou 6º REG 1 e 6º REG 2, pega "6º")
   const ano = turmasMarcadas[0];
-
   const labelUnidade = document.getElementById('labelUnidadeDinamica');
   if (componente === "Língua Portuguesa" || componente === "Língua Inglesa") {
     labelUnidade.innerText = "Unidade Temática / Prática de Linguagem";
@@ -231,7 +228,6 @@ async function enviarPlanoAulaAPI() {
   const recursosSelecionados = Array.from(document.querySelectorAll('input[name="chk_recursos"]:checked')).map(c => c.value).join(", ");
   const acoesEstrategicas = Array.from(document.querySelectorAll('.chk-estrategia:checked')).map(cb => cb.value).join(" | ");
   
-  // Unifica as turmas marcadas com um " e " para aparecer no documento final
   const turmaInteira = turmasMarcadas.join(" e ");
   const anoEscolaridade = turmasMarcadas[0].split(' ')[0] + " Ano"; 
 
@@ -269,7 +265,7 @@ async function enviarPlanoAulaAPI() {
   } catch(e) { 
     alert("⚠️ Erro de conexão ao enviar o plano de aula."); 
   } finally { 
-    btnGerar.innerText = "🚀 Gerar Plano Oficial & Enviar para Supervisão"; 
+    btnGerar.innerText = "🚀 Gerar Plano Oficial & Enviar"; 
     btnGerar.disabled = false; 
   }
 }
@@ -314,6 +310,7 @@ function abrirModalQR(url) {
     modal.style.display = 'flex';
   } else { alert("URL da pasta indisponível."); }
 }
+
 function fecharModalQR() { document.getElementById('modalQR').style.display = 'none'; }
 
 function sairDoSistema() {
@@ -326,6 +323,24 @@ function sairDoSistema() {
   document.getElementById('msgWorkspace').innerText = "";
   document.getElementById('msgLogin').innerText = "";
   mudarAba('gerarPlano', null);
+}
+
+function limparFormulario() {
+  if(!confirm("Tem certeza que deseja limpar o formulário? O texto do desenvolvimento será apagado.")) return;
+  document.getElementById('tipoPlano').selectedIndex = 0;
+  document.getElementById('qtdAulas').value = 1;
+  document.getElementById('componente').selectedIndex = 0;
+  document.getElementById('selTrimestre').selectedIndex = 2;
+  document.getElementById('dataInicioPer').value = "";
+  document.getElementById('dataFimPer').value = "";
+  document.querySelectorAll('input[name="chkTurma"]').forEach(cb => cb.checked = false);
+  document.getElementById('blocoCurriculo').style.display = 'none';
+  document.getElementById('painelOpcoes').style.display = 'none';
+  document.getElementById('unidade').innerHTML = '<option value="">Selecione a Unidade Temática...</option>';
+  document.getElementById('desenvolvimento').value = "";
+  if(document.getElementById('generoTextual')) document.getElementById('generoTextual').value = "";
+  document.querySelectorAll('input[name="chk_recursos"]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('.chk-estrategia').forEach(cb => cb.checked = false);
 }
 
 document.addEventListener("DOMContentLoaded", () => { 
