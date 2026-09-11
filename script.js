@@ -157,7 +157,7 @@ function montarCheckboxes() {
 
   itens.forEach(item => {
     if (item.habPriorizada && item.habPriorizada !== "-") {
-      htmlPri += `<div class="checkbox-item"><input type="radio" name="radioHabPriorizada" value="${item.habPriorizada}"><label>${item.habPriorizada}</label></div>`;
+      htmlPri += `<div class="checkbox-item"><input type="checkbox" name="chkHabPriorizada" value="${item.habPriorizada}"><label>${item.habPriorizada}</label></div>`;
     }
     
     if (mostrarRecSup) {
@@ -178,15 +178,29 @@ function montarCheckboxes() {
     }
   });
 
-  let painelHabilidades = `<label style="font-weight:700; color:#d97706; margin-bottom:5px;">${tituloHabPrincipal}</label>${htmlPri || '<p style="color:#94a3b8; font-size:0.9rem;">Nenhuma cadastrada.</p>'}`;
+  // MONTAGEM DAS CAIXAS COLORIDAS SEPARADAS
+  let painelHabilidades = `<div style="background:#fffbeb; padding:15px; border-radius:12px; border:1px solid #fde68a; margin-bottom:15px;">
+                              <label style="font-weight:700; color:#d97706; margin-bottom:10px; display:block;">🎯 ${tituloHabPrincipal}</label>
+                              ${htmlPri || '<p style="color:#94a3b8; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
+                           </div>`;
+
   if (mostrarRecSup) {
-    painelHabilidades += `${htmlRec ? `<label style="font-weight:700; color:#d97706; margin-top:10px; margin-bottom:5px;">Habilidades de Recomposição:</label>${htmlRec}` : ''}`;
-    painelHabilidades += `${htmlSup ? `<label style="font-weight:700; color:#d97706; margin-top:10px; margin-bottom:5px;">Habilidades de Suporte:</label>${htmlSup}` : ''}`;
+    painelHabilidades += `<div style="background:#f0fdf4; padding:15px; border-radius:12px; border:1px solid #bbf7d0; margin-bottom:15px;">
+                              <label style="font-weight:700; color:#166534; margin-bottom:10px; display:block;">🩹 Habilidades de Recomposição:</label>
+                              ${htmlRec || '<p style="color:#94a3b8; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
+                          </div>`;
+    painelHabilidades += `<div style="background:#eff6ff; padding:15px; border-radius:12px; border:1px solid #bfdbfe; margin-bottom:15px;">
+                              <label style="font-weight:700; color:#1e40af; margin-bottom:10px; display:block;">🛠️ Habilidades de Suporte:</label>
+                              ${htmlSup || '<p style="color:#94a3b8; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
+                          </div>`;
   } else if (mostrarSocioemocional) {
-    painelHabilidades += `${htmlRec ? `<label style="font-weight:700; color:#d97706; margin-top:10px; margin-bottom:5px;">Habilidades Socioemocionais:</label>${htmlRec}` : ''}`;
+    painelHabilidades += `<div style="background:#f0fdf4; padding:15px; border-radius:12px; border:1px solid #bbf7d0; margin-bottom:15px;">
+                              <label style="font-weight:700; color:#166534; margin-bottom:10px; display:block;">🤝 Habilidades Socioemocionais:</label>
+                              ${htmlRec || '<p style="color:#94a3b8; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
+                          </div>`;
   }
 
-  document.getElementById('listaHabilidades').innerHTML = painelHabilidades;
+  document.getElementById('areaHabilidades').innerHTML = painelHabilidades;
 
   let htmlObj = `<label style="font-weight:700; color:#0284c7; display:block; margin-bottom:8px;">${tituloConteudo}</label>`;
   conteudoSet.forEach(cont => htmlObj += `<div class="checkbox-item"><input type="checkbox" name="chkObjeto" value="${cont}"><label>${cont}</label></div>`);
@@ -216,14 +230,27 @@ async function enviarPlanoAulaAPI() {
   btnGerar.innerText = "⏳ Gerando Documento Oficial...";
   btnGerar.disabled = true;
 
-  const habPri = document.querySelector('input[name="radioHabPriorizada"]:checked');
-  const habPrioTexto = habPri ? habPri.value : "Não selecionada";
-  
-  const itemMatriz = dadosMatrizGlobal.find(i => i.habPriorizada === habPrioTexto);
-  const evidenciasMatriz = (itemMatriz && itemMatriz.evidencias && itemMatriz.evidencias !== "-") ? itemMatriz.evidencias : "Avaliação formativa e contínua do processo de aprendizagem.";
-
+  // Extrai as seleções (agora a Priorizada permite múltiplas marcações)
+  const pri = Array.from(document.querySelectorAll('input[name="chkHabPriorizada"]:checked')).map(c => c.value).join("\n");
   const rec = Array.from(document.querySelectorAll('input[name="chkHabRecomposicao"]:checked')).map(c => c.value).join("\n");
   const sup = Array.from(document.querySelectorAll('input[name="chkHabSuporte"]:checked')).map(c => c.value).join("\n");
+  
+  // Extração das evidências com base em qualquer habilidade marcada
+  let evidenciasMatriz = "Avaliação formativa e contínua do processo de aprendizagem.";
+  let todasSelecionadas = [
+    ...document.querySelectorAll('input[name="chkHabPriorizada"]:checked'),
+    ...document.querySelectorAll('input[name="chkHabRecomposicao"]:checked'),
+    ...document.querySelectorAll('input[name="chkHabSuporte"]:checked')
+  ];
+
+  if (todasSelecionadas.length > 0) {
+    let textoBusca = todasSelecionadas[0].value;
+    let itemAchado = dadosMatrizGlobal.find(i => i.habPriorizada === textoBusca || i.habRecomposicao === textoBusca || i.habSuporte === textoBusca);
+    if (itemAchado && itemAchado.evidencias && itemAchado.evidencias !== "-") {
+      evidenciasMatriz = itemAchado.evidencias;
+    }
+  }
+
   const objs = Array.from(document.querySelectorAll('input[name="chkObjeto"]:checked')).map(c => c.value).join(" | ");
   const recursosSelecionados = Array.from(document.querySelectorAll('input[name="chk_recursos"]:checked')).map(c => c.value).join(", ");
   const acoesEstrategicas = Array.from(document.querySelectorAll('.chk-estrategia:checked')).map(cb => cb.value).join(" | ");
@@ -242,9 +269,9 @@ async function enviarPlanoAulaAPI() {
     ano: anoEscolaridade,
     trimestre: document.getElementById('selTrimestre').value,
     unidade: document.getElementById('unidade').value,
-    habPriorizada: habPrioTexto,
-    habRecomposicao: rec,
-    habSuporte: sup,
+    habPriorizada: pri || "",
+    habRecomposicao: rec || "",
+    habSuporte: sup || "",
     objetoConhecimento: objs || "-",
     genero: document.getElementById('generoTextual') ? document.getElementById('generoTextual').value : "-",
     desenvolvimento: document.getElementById('desenvolvimento').value + (acoesEstrategicas ? "\n\nAções Estratégicas: " + acoesEstrategicas : ""),
