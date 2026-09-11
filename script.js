@@ -70,7 +70,7 @@ async function fazerLogin() {
 
 function carregarComponentesProfessor(componentes, turmas) {
   const selComp = document.getElementById('componente');
-  const selTurma = document.getElementById('turmaSelecionada');
+  const divTurmas = document.getElementById('turmaSelecionada');
 
   let htmlComp = '<option value="">Selecione o componente...</option>';
   (componentes?.length ? componentes : ["Matemática", "Língua Portuguesa", "Geografia", "História", "Ciências", "Língua Inglesa", "Arte", "Educação Física", "Ensino Religioso"]).forEach(c => {
@@ -78,19 +78,28 @@ function carregarComponentesProfessor(componentes, turmas) {
   });
   selComp.innerHTML = htmlComp;
 
-  let htmlTurma = '<option value="">Selecione a turma...</option>';
+  let htmlTurma = '';
   (turmas?.length ? turmas : ["6º Ano", "7º Ano", "8º Ano", "9º Ano"]).forEach(t => {
-    htmlTurma += `<option value="${t}">${t}</option>`;
+    htmlTurma += `<label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.95rem; color:#334155;">
+                    <input type="checkbox" name="chkTurma" value="${t}" onchange="buscarMatriz()" style="width:16px; height:16px; accent-color:var(--cor-secundaria);"> ${t}
+                  </label>`;
   });
-  selTurma.innerHTML = htmlTurma;
+  divTurmas.innerHTML = htmlTurma;
 }
 
 async function buscarMatriz() {
   const componente = document.getElementById('componente').value;
-  const ano = document.getElementById('turmaSelecionada').value;
+  const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurma"]:checked')).map(cb => cb.value);
   const trimestre = document.getElementById('selTrimestre') ? document.getElementById('selTrimestre').value : "3º Trimestre";
 
-  if (!componente || !ano || !trimestre) return;
+  // Só busca na matriz se o professor escolheu a disciplina e PELO MENOS UMA turma
+  if (!componente || turmasMarcadas.length === 0 || !trimestre) {
+    document.getElementById('blocoCurriculo').style.display = 'none';
+    return;
+  }
+
+  // Pega o ano escolar com base na primeira turma marcada (ex: se marcou 6º REG 1 e 6º REG 2, pega "6º")
+  const ano = turmasMarcadas[0];
 
   const labelUnidade = document.getElementById('labelUnidadeDinamica');
   if (componente === "Língua Portuguesa" || componente === "Língua Inglesa") {
@@ -200,6 +209,13 @@ const formatarData = (dataBase) => {
 
 async function enviarPlanoAulaAPI() {
   const btnGerar = document.getElementById('btnGerar');
+  const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurma"]:checked')).map(cb => cb.value);
+
+  if (turmasMarcadas.length === 0) {
+    alert("⚠️ Por favor, marque pelo menos uma turma na Etapa 1.");
+    return;
+  }
+
   btnGerar.innerText = "⏳ Gerando Documento Oficial...";
   btnGerar.disabled = true;
 
@@ -213,10 +229,11 @@ async function enviarPlanoAulaAPI() {
   const sup = Array.from(document.querySelectorAll('input[name="chkHabSuporte"]:checked')).map(c => c.value).join("\n");
   const objs = Array.from(document.querySelectorAll('input[name="chkObjeto"]:checked')).map(c => c.value).join(" | ");
   const recursosSelecionados = Array.from(document.querySelectorAll('input[name="chk_recursos"]:checked')).map(c => c.value).join(", ");
-  
   const acoesEstrategicas = Array.from(document.querySelectorAll('.chk-estrategia:checked')).map(cb => cb.value).join(" | ");
-  const turmaInteira = document.getElementById('turmaSelecionada').value;
-  const anoEscolaridade = turmaInteira.split(' ')[0] + " Ano"; 
+  
+  // Unifica as turmas marcadas com um " e " para aparecer no documento final
+  const turmaInteira = turmasMarcadas.join(" e ");
+  const anoEscolaridade = turmasMarcadas[0].split(' ')[0] + " Ano"; 
 
   const dadosPlano = {
     professor: document.getElementById('nomeProfessor').value,
