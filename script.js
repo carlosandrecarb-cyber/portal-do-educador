@@ -1,146 +1,118 @@
 const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
 var professorLogado = "";
-var emailLogado = "";
 var dadosMatrizGlobal = [];
 
 function mudarAba(abaId, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
   document.getElementById(abaId).classList.add('active');
-  
-  if (btn) {
-    btn.classList.add('active');
-  } else {
-    document.querySelectorAll('.tabs button').forEach(b => {
-      if ((abaId === 'gerarPlano' && b.innerText.includes('Gerar Plano')) ||
-          (abaId === 'meusPlanos' && b.innerText.includes('Meus Planos'))) {
-        b.classList.add('active');
-      }
-    });
-  }
-
+  if (btn) btn.classList.add('active');
+  else document.querySelectorAll('.tabs button').forEach(b => { if (b.innerText.includes(abaId === 'gerarPlano' ? 'Gerar' : 'Meus')) b.classList.add('active'); });
   if (abaId === 'meusPlanos') carregarMeusPlanos();
 }
 
 function verificarEscolaManual() {
   const codigo = document.getElementById('inputCodigoEscola').value.trim().toLowerCase();
-  const msg = document.getElementById('msgWorkspace');
-  
-  if (!codigo) { msg.innerText = "Digite o código da instituição."; return; }
-
-  if (codigo.length > 1) {
+  if (codigo.length > 1) { // Pode definir a senha padrão da escola aqui
     document.getElementById('telaWorkspace').style.display = 'none';
     document.getElementById('telaLogin').style.display = 'flex';
     document.getElementById('tituloNomeEscola').innerText = "Escola Mestra Aurora";
     document.getElementById('logoLogin').src = "https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5";
     document.getElementById('logoHeader').src = "https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5";
-  } else {
-    msg.innerText = "Código institucional não reconhecido.";
-  }
+  } else { document.getElementById('msgWorkspace').innerText = "Código não reconhecido."; }
 }
 
 async function fazerLogin() {
   const usuario = document.getElementById('loginUsuario').value.trim();
   const senha = document.getElementById('loginSenha').value.trim();
   const msg = document.getElementById('msgLogin');
-
-  if (!usuario || !senha) { msg.innerText = "Preencha usuário e senha."; return; }
-
-  msg.innerText = "⏳ Autenticando...";
+  msg.innerText = "⏳ A autenticar...";
+  
   try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "login", usuario, senha }) });
+    const res = await fetch(URL_API, { method: 'POST', redirect: 'follow', headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ acao: "login", usuario, senha }) });
     const r = await res.json();
-
+    
     if (r.status === "sucesso") {
       professorLogado = r.nome;
-      emailLogado = r.email; 
-      
       document.getElementById('telaLogin').style.display = 'none';
       document.getElementById('nomeProfessor').value = r.nome;
+      document.getElementById('infoUsuarioBoasVindas').style.display = 'inline-block';
+      document.getElementById('infoUsuarioBoasVindas').innerText = `👋 Docente: ${r.nome}`;
       
-      const headerBoasVindas = document.getElementById('infoUsuarioBoasVindas');
-      headerBoasVindas.style.display = 'inline-block';
-      headerBoasVindas.innerText = `👋 Docente: ${r.nome}`;
-
+      // Aqui acontece a mágica do acesso único: Carregamos as turmas e disciplinas exatas dele!
       carregarComponentesProfessor(r.componentes, r.turmas);
-    } else {
-      msg.innerText = r.mensagem || "Usuário ou senha incorretos.";
+    } else { 
+      msg.innerText = r.mensagem || "Erro. Verifique utilizador e senha."; 
     }
-  } catch (e) {
-    msg.innerText = "⚠️ Erro de conexão com o servidor.";
-  }
+  } catch (e) { msg.innerText = "⚠️ Erro de comunicação com o servidor."; }
 }
 
-function carregarComponentesProfessor(componentes, turmas) {
+// ==========================================
+// FUNÇÃO QUE MONTA OS MENUS PERSONALIZADOS DO PROFESSOR
+// ==========================================
+function carregarComponentesProfessor(componentesLista, turmasLista) {
   const selComp = document.getElementById('componente');
-  const divTurmas = document.getElementById('turmaSelecionada');
+  const selTurma = document.getElementById('turmaSelecionada');
 
-  let htmlComp = '<option value="">Selecione o componente...</option>';
-  (componentes?.length ? componentes : ["Matemática", "Língua Portuguesa", "Geografia", "História", "Ciências", "Língua Inglesa", "Arte", "Educação Física", "Ensino Religioso"]).forEach(c => {
-    htmlComp += `<option value="${c}">${c}</option>`;
-  });
+  // Monta o menu de Disciplinas
+  let htmlComp = '<option value="">Selecione a disciplina desta aula...</option>';
+  if (componentesLista && componentesLista.length > 0 && componentesLista[0] !== "") {
+    componentesLista.forEach(c => htmlComp += `<option value="${c}">${c}</option>`);
+  } else {
+    htmlComp += `<option value="">⚠️ Nenhuma disciplina cadastrada pela gestão.</option>`;
+  }
   selComp.innerHTML = htmlComp;
 
-  let htmlTurma = '';
-  (turmas?.length ? turmas : ["6º Ano", "7º Ano", "8º Ano", "9º Ano"]).forEach(t => {
-    htmlTurma += `<label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.95rem; color:#334155;">
-                    <input type="checkbox" name="chkTurma" value="${t}" onchange="buscarMatriz()" style="width:16px; height:16px; accent-color:var(--cor-secundaria);"> ${t}
-                  </label>`;
-  });
-  divTurmas.innerHTML = htmlTurma;
+  // Monta o menu de Turmas
+  let htmlTurma = '<option value="">Selecione a turma...</option>';
+  if (turmasLista && turmasLista.length > 0 && turmasLista[0] !== "") {
+    turmasLista.forEach(t => htmlTurma += `<option value="${t}">${t}</option>`);
+  } else {
+    htmlTurma += `<option value="">⚠️ Nenhuma turma cadastrada pela gestão.</option>`;
+  }
+  selTurma.innerHTML = htmlTurma;
 }
 
+// ==========================================
+// BUSCA A MATRIZ COM BASE NA DISCIPLINA E TURMA ESCOLHIDA
+// ==========================================
 async function buscarMatriz() {
   const componente = document.getElementById('componente').value;
-  const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurma"]:checked')).map(cb => cb.value);
+  const turmaExata = document.getElementById('turmaSelecionada').value;
   const trimestre = document.getElementById('selTrimestre') ? document.getElementById('selTrimestre').value : "3º Trimestre";
-
-  if (!componente || turmasMarcadas.length === 0 || !trimestre) {
-    document.getElementById('blocoCurriculo').style.display = 'none';
-    return;
-  }
-
-  const ano = turmasMarcadas[0];
-  const labelUnidade = document.getElementById('labelUnidadeDinamica');
-  if (componente === "Língua Portuguesa" || componente === "Língua Inglesa") {
-    labelUnidade.innerText = "Unidade Temática / Prática de Linguagem";
-    if(document.getElementById('areaGenero')) document.getElementById('areaGenero').style.display = 'block';
-  } else {
-    labelUnidade.innerText = "Unidade Temática";
-    if(document.getElementById('areaGenero')) document.getElementById('areaGenero').style.display = 'none';
-  }
-
-  const selUnidade = document.getElementById('unidade');
-  selUnidade.innerHTML = '<option value="">Buscando unidades do trimestre...</option>';
+  
+  if (!componente || !turmaExata || !trimestre) return;
+  
+  document.getElementById('unidade').innerHTML = '<option value="">⏳ A procurar na matriz oficial...</option>';
+  document.getElementById('blocoCurriculo').style.display = 'block';
 
   try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "buscarMatrizTrimestre", componente, trimestre, ano }) });
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "buscarMatrizTrimestre", componente: componente, trimestre: trimestre, ano: turmaExata }) });
     const r = await res.json();
-    
     dadosMatrizGlobal = r.itens || [];
-    let htmlUnidades = '<option value="">Selecione a Unidade Temática...</option>';
-    const unidadesUnicas = [...new Set(dadosMatrizGlobal.map(i => i.unidade))];
     
-    if (unidadesUnicas.length > 0) {
-      unidadesUnicas.forEach(u => { htmlUnidades += `<option value="${u}">${u}</option>`; });
-      document.getElementById('blocoCurriculo').style.display = 'block';
+    let htmlUnidades = '<option value="">Selecione a Unidade Temática...</option>';
+    let unidadesUnicas = [...new Set(dadosMatrizGlobal.map(i => i.unidade))];
+    
+    if(unidadesUnicas.length > 0) {
+        unidadesUnicas.forEach(u => htmlUnidades += `<option value="${u}">${u}</option>`);
     } else {
-      htmlUnidades = '<option value="">Nenhuma unidade cadastrada para este trimestre</option>';
+        htmlUnidades = '<option value="">Nenhuma matriz encontrada para este filtro.</option>';
     }
-    selUnidade.innerHTML = htmlUnidades;
-  } catch(e) {
-    selUnidade.innerHTML = '<option value="">Erro ao conectar com a planilha mestra</option>';
-  }
+    
+    document.getElementById('unidade').innerHTML = htmlUnidades;
+  } catch(e) { document.getElementById('unidade').innerHTML = '<option value="">Erro ao carregar matriz.</option>'; }
 }
 
 function montarCheckboxes() {
   const unidadeSelecionada = document.getElementById('unidade').value;
   const componente = document.getElementById('componente').value;
   if (!unidadeSelecionada) return;
-
   document.getElementById('painelOpcoes').style.display = 'block';
+
   const itens = dadosMatrizGlobal.filter(i => i.unidade === unidadeSelecionada);
   
+  // Definição dos rótulos dinâmicos da Interface
   let tituloHabPrincipal = "Habilidade do CRMG:";
   let tituloConteudo = "Conteúdos Relacionados:";
   let mostrarRecSup = false;
@@ -156,12 +128,9 @@ function montarCheckboxes() {
 
   let htmlPri = "", htmlRec = "", htmlSup = "";
   let conteudoSet = new Set();
-  let generosSet = new Set();
 
   itens.forEach(item => {
-    if (item.habPriorizada && item.habPriorizada !== "-") {
-      htmlPri += `<div class="checkbox-item"><input type="checkbox" name="chkHabPriorizada" value="${item.habPriorizada}"><label>${item.habPriorizada}</label></div>`;
-    }
+    if (item.habPriorizada && item.habPriorizada !== "-") { htmlPri += `<div class="checkbox-item"><input type="radio" name="radioHabPriorizada" value="${item.habPriorizada}"><label>${item.habPriorizada}</label></div>`; }
     
     if (mostrarRecSup) {
       if (item.habRecomposicao && item.habRecomposicao !== "-") htmlRec += `<div class="checkbox-item"><input type="checkbox" name="chkHabRecomposicao" value="${item.habRecomposicao}"><label>${item.habRecomposicao}</label></div>`;
@@ -175,43 +144,22 @@ function montarCheckboxes() {
     } else {
       if (item.conteudosRelacionados && item.conteudosRelacionados !== "-") conteudoSet.add(item.conteudosRelacionados);
     }
-    
-    if (item.genero && item.genero !== "-") {
-      generosSet.add(item.genero);
-    }
   });
 
-  let painelHabilidades = `<div style="background:#fffbeb; padding:15px; border-radius:12px; border:1px solid #fde68a; margin-bottom:15px;">
-                              <label style="font-weight:700; color:#d97706; margin-bottom:10px; display:block;">🎯 ${tituloHabPrincipal}</label>
-                              ${htmlPri || '<p style="color:#94a3b8; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
-                           </div>`;
-
+  let painelHabilidades = `<label style="font-weight:700;">${tituloHabPrincipal}</label>${htmlPri || '<p>Nenhuma.</p>'}`;
+  
   if (mostrarRecSup) {
-    painelHabilidades += `<div style="background:#f0fdf4; padding:15px; border-radius:12px; border:1px solid #bbf7d0; margin-bottom:15px;">
-                              <label style="font-weight:700; color:#166534; margin-bottom:10px; display:block;">🩹 Habilidades de Recomposição:</label>
-                              ${htmlRec || '<p style="color:#94a3b8; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
-                          </div>`;
-    painelHabilidades += `<div style="background:#eff6ff; padding:15px; border-radius:12px; border:1px solid #bfdbfe; margin-bottom:15px;">
-                              <label style="font-weight:700; color:#1e40af; margin-bottom:10px; display:block;">🛠️ Habilidades de Suporte:</label>
-                              ${htmlSup || '<p style="color:#94a3b8; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
-                          </div>`;
+    painelHabilidades += `${htmlRec ? `<label style="font-weight:700; margin-top:10px;">Habilidades de Recomposição:</label>${htmlRec}` : ''}`;
+    painelHabilidades += `${htmlSup ? `<label style="font-weight:700; margin-top:10px;">Habilidades de Suporte:</label>${htmlSup}` : ''}`;
   } else if (mostrarSocioemocional) {
-    painelHabilidades += `<div style="background:#f0fdf4; padding:15px; border-radius:12px; border:1px solid #bbf7d0; margin-bottom:15px;">
-                              <label style="font-weight:700; color:#166534; margin-bottom:10px; display:block;">🤝 Habilidades Socioemocionais:</label>
-                              ${htmlRec || '<p style="color:#94a3b8; font-size:0.9rem;">Nenhuma cadastrada.</p>'}
-                          </div>`;
+    painelHabilidades += `${htmlRec ? `<label style="font-weight:700; margin-top:10px;">Habilidades Socioemocionais:</label>${htmlRec}` : ''}`;
   }
 
-  document.getElementById('areaHabilidades').innerHTML = painelHabilidades;
+  document.getElementById('listaHabilidades').innerHTML = painelHabilidades;
 
   let htmlObj = `<label style="font-weight:700; color:#0284c7; display:block; margin-bottom:8px;">${tituloConteudo}</label>`;
   conteudoSet.forEach(cont => htmlObj += `<div class="checkbox-item"><input type="checkbox" name="chkObjeto" value="${cont}"><label>${cont}</label></div>`);
-  document.getElementById('listaObjetos').innerHTML = conteudoSet.size > 0 ? htmlObj : '<p style="color:#94a3b8; font-size:0.9rem;">Nenhum conteúdo localizado.</p>';
-
-  const campoGenero = document.getElementById('generoTextual');
-  if (campoGenero && (componente === "Língua Portuguesa" || componente === "Língua Inglesa")) {
-    campoGenero.value = Array.from(generosSet).join(" | ");
-  }
+  document.getElementById('listaObjetos').innerHTML = conteudoSet.size > 0 ? htmlObj : '<p>Nenhum conteúdo localizado.</p>';
 }
 
 const formatarData = (dataBase) => {
@@ -221,46 +169,26 @@ const formatarData = (dataBase) => {
 };
 
 async function enviarPlanoAulaAPI() {
-  const btnGerar = document.getElementById('btnGerar');
-  const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurma"]:checked')).map(cb => cb.value);
+  const btn = document.getElementById('btnGerar');
+  btn.innerText = "⏳ A Gerar Documento Oficial...";
+  btn.disabled = true;
 
-  if (turmasMarcadas.length === 0) {
-    alert("⚠️ Por favor, marque pelo menos uma turma na Etapa 1.");
-    return;
-  }
+  const habPri = document.querySelector('input[name="radioHabPriorizada"]:checked');
+  const habPrioTexto = habPri ? habPri.value : "Não selecionada";
+  
+  const itemMatriz = dadosMatrizGlobal.find(i => i.habPriorizada === habPrioTexto);
+  const evidenciasMatriz = (itemMatriz && itemMatriz.evidencias && itemMatriz.evidencias !== "-") ? itemMatriz.evidencias : "Avaliação formativa e contínua.";
 
-  btnGerar.innerText = "⏳ Gerando Documento Oficial...";
-  btnGerar.disabled = true;
-
-  const pri = Array.from(document.querySelectorAll('input[name="chkHabPriorizada"]:checked')).map(c => c.value).join("\n");
   const rec = Array.from(document.querySelectorAll('input[name="chkHabRecomposicao"]:checked')).map(c => c.value).join("\n");
   const sup = Array.from(document.querySelectorAll('input[name="chkHabSuporte"]:checked')).map(c => c.value).join("\n");
-  
-  let evidenciasMatriz = "Avaliação formativa e contínua do processo de aprendizagem.";
-  let todasSelecionadas = [
-    ...document.querySelectorAll('input[name="chkHabPriorizada"]:checked'),
-    ...document.querySelectorAll('input[name="chkHabRecomposicao"]:checked'),
-    ...document.querySelectorAll('input[name="chkHabSuporte"]:checked')
-  ];
-
-  if (todasSelecionadas.length > 0) {
-    let textoBusca = todasSelecionadas[0].value;
-    let itemAchado = dadosMatrizGlobal.find(i => i.habPriorizada === textoBusca || i.habRecomposicao === textoBusca || i.habSuporte === textoBusca);
-    if (itemAchado && itemAchado.evidencias && itemAchado.evidencias !== "-") {
-      evidenciasMatriz = itemAchado.evidencias;
-    }
-  }
-
   const objs = Array.from(document.querySelectorAll('input[name="chkObjeto"]:checked')).map(c => c.value).join(" | ");
-  const recursosSelecionados = Array.from(document.querySelectorAll('input[name="chk_recursos"]:checked')).map(c => c.value).join(", ");
-  const acoesEstrategicas = Array.from(document.querySelectorAll('.chk-estrategia:checked')).map(cb => cb.value).join(" | ");
+  const recursos = Array.from(document.querySelectorAll('input[name="chk_recursos"]:checked')).map(c => c.value).join(", ");
   
-  const turmaInteira = turmasMarcadas.join(" e ");
-  const anoEscolaridade = turmasMarcadas[0].split(' ')[0] + " Ano"; 
+  const turmaInteira = document.getElementById('turmaSelecionada').value;
+  const anoEscolaridade = turmaInteira.split('º')[0] + "º Ano"; // Extrai '6º Ano' de '6º REG 1'
 
   const dadosPlano = {
     professor: document.getElementById('nomeProfessor').value,
-    emailProf: emailLogado, 
     tipoPlano: document.getElementById('tipoPlano').value,
     componente: document.getElementById('componente').value,
     qtdAulas: document.getElementById('qtdAulas').value,
@@ -270,13 +198,12 @@ async function enviarPlanoAulaAPI() {
     ano: anoEscolaridade,
     trimestre: document.getElementById('selTrimestre').value,
     unidade: document.getElementById('unidade').value,
-    habPriorizada: pri || "",
-    habRecomposicao: rec || "",
-    habSuporte: sup || "",
+    habPriorizada: habPrioTexto,
+    habRecomposicao: rec,
+    habSuporte: sup,
     objetoConhecimento: objs || "-",
-    genero: document.getElementById('generoTextual') ? document.getElementById('generoTextual').value : "-",
-    desenvolvimento: document.getElementById('desenvolvimento').value + (acoesEstrategicas ? "\n\nAções Estratégicas: " + acoesEstrategicas : ""),
-    recursos: recursosSelecionados || "-",
+    desenvolvimento: document.getElementById('desenvolvimento').value,
+    recursos: recursos || "-",
     evidencias: evidenciasMatriz
   };
 
@@ -284,95 +211,40 @@ async function enviarPlanoAulaAPI() {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "gerarPlano", planoData: dadosPlano }) });
     const r = await res.json();
     if (r.status === "sucesso") {
-      alert("✅ Plano de aula gerado com sucesso!");
       window.open(r.url, '_blank');
       mudarAba('meusPlanos', null);
-    } else {
-      alert("⚠️ Erro ao gerar plano: " + r.mensagem);
-    }
-  } catch(e) { 
-    alert("⚠️ Erro de conexão ao enviar o plano de aula."); 
-  } finally { 
-    btnGerar.innerText = "🚀 Gerar Plano Oficial & Enviar"; 
-    btnGerar.disabled = false; 
-  }
+    } else { alert("Erro: " + r.mensagem); }
+  } catch(e) { alert("Erro de conexão com o servidor Google."); } 
+  finally { btn.innerText = "🚀 Gerar Plano Oficial & Enviar"; btn.disabled = false; }
 }
 
 async function carregarMeusPlanos() {
   const container = document.getElementById('listaDePlanos');
-  container.innerHTML = "⏳ Carregando seus planos...";
+  container.innerHTML = "⏳ A carregar os seus planos...";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarSupervisao" }) });
     const r = await res.json();
     if (r.status === "sucesso" && r.registros) {
       const meus = r.registros.filter(i => i.professor.toLowerCase() === professorLogado.toLowerCase());
-      if (!meus.length) {
-        container.innerHTML = "<p>Nenhum plano gerado por você ainda. Crie seu primeiro plano na aba ao lado! 📝</p>";
-        return;
-      }
+      if (!meus.length) return container.innerHTML = "<p>Nenhum plano gerado ainda.</p>";
       let html = "";
       meus.reverse().forEach(p => {
+        let corStatus = p.status.includes('Aprovado') ? '#10b981' : (p.status.includes('Devolvido') ? '#ef4444' : '#f59e0b');
         html += `<div class="plano-item">
-          <strong>📅 Data:</strong> ${p.data} | <strong>📚 Disciplina:</strong> ${p.componente} (${p.turma} - ${p.trimestre || 'Trimestre'})<br>
-          <strong>🎯 Unidade:</strong> ${p.unidade}<br>
-          <strong>📌 Status:</strong> ${p.status}<br>
-          <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-            <a href="${p.docUrl}" target="_blank" style="background:#2980b9; color:white; padding:8px 14px; border-radius:10px; text-decoration:none; font-size:0.85rem; font-weight:700;">📄 Abrir Google Doc</a>
-            <a href="${p.pastaUrl}" target="_blank" style="background:#e67e22; color:white; padding:8px 14px; border-radius:10px; text-decoration:none; font-size:0.85rem; font-weight:700;">📁 Pasta de Evidências</a>
+          <strong>📅 Data:</strong> ${p.data} | <strong>📚 Disciplina:</strong> ${p.componente} (${p.turma})<br>
+          <span style="display:inline-block; margin-top:8px; padding:4px 10px; background:${corStatus}; color:white; border-radius:6px; font-size:0.85rem; font-weight:bold;">${p.status}</span>
+          <br><br>
+          <div style="display:flex; gap:10px;">
+            <a href="${p.docUrl}" target="_blank" style="text-decoration:none; background:#2563eb; color:white; padding:8px 12px; border-radius:8px; font-size:0.9rem;">📄 Abrir Google Doc</a>
+            <button onclick="abrirModalQR('${p.pastaUrl}')" style="background:#1e293b; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">📱 Anexar Evidências (QR)</button>
           </div>
-          <button class="btn-camera" style="background:#8e44ad;" onclick="abrirModalQR('${p.pastaUrl}')">📱 Enviar Fotos / Evidências via Celular (QR Code)</button>
         </div>`;
       });
       container.innerHTML = html;
-    } else {
-      container.innerHTML = "<p>Nenhum registro encontrado.</p>";
     }
-  } catch (e) { container.innerHTML = "<p>Erro ao carregar o histórico de planos.</p>"; }
+  } catch (e) { container.innerHTML = "<p>Erro ao carregar lista.</p>"; }
 }
 
-function abrirModalQR(url) {
-  const modal = document.getElementById('modalQR');
-  const imgQR = document.getElementById('imgQRCode');
-  if (modal && imgQR && url) {
-    imgQR.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`; 
-    modal.style.display = 'flex';
-  } else { alert("URL da pasta indisponível."); }
-}
-
+function abrirModalQR(url) { document.getElementById('imgQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`; document.getElementById('modalQR').style.display = 'flex'; }
 function fecharModalQR() { document.getElementById('modalQR').style.display = 'none'; }
-
-function sairDoSistema() {
-  professorLogado = "";
-  emailLogado = ""; 
-  document.getElementById('loginSenha').value = ""; 
-  document.getElementById('infoUsuarioBoasVindas').style.display = 'none';
-  document.getElementById('telaWorkspace').style.display = 'flex';
-  document.getElementById('telaLogin').style.display = 'none';
-  document.getElementById('inputCodigoEscola').value = "";
-  document.getElementById('msgWorkspace').innerText = "";
-  document.getElementById('msgLogin').innerText = "";
-  mudarAba('gerarPlano', null);
-}
-
-function limparFormulario() {
-  if(!confirm("Tem certeza que deseja limpar o formulário? O texto do desenvolvimento será apagado.")) return;
-  document.getElementById('tipoPlano').selectedIndex = 0;
-  document.getElementById('qtdAulas').value = 1;
-  document.getElementById('componente').selectedIndex = 0;
-  document.getElementById('selTrimestre').selectedIndex = 2;
-  document.getElementById('dataInicioPer').value = "";
-  document.getElementById('dataFimPer').value = "";
-  document.querySelectorAll('input[name="chkTurma"]').forEach(cb => cb.checked = false);
-  document.getElementById('blocoCurriculo').style.display = 'none';
-  document.getElementById('painelOpcoes').style.display = 'none';
-  document.getElementById('unidade').innerHTML = '<option value="">Selecione a Unidade Temática...</option>';
-  document.getElementById('desenvolvimento').value = "";
-  if(document.getElementById('generoTextual')) document.getElementById('generoTextual').value = "";
-  document.querySelectorAll('input[name="chk_recursos"]').forEach(cb => cb.checked = false);
-  document.querySelectorAll('.chk-estrategia').forEach(cb => cb.checked = false);
-}
-
-document.addEventListener("DOMContentLoaded", () => { 
-  const btn = document.getElementById('btnGerar'); 
-  if(btn) btn.onclick = enviarPlanoAulaAPI; 
-});
+document.addEventListener("DOMContentLoaded", () => { const btn = document.getElementById('btnGerar'); if(btn) btn.onclick = enviarPlanoAulaAPI; });
