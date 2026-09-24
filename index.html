@@ -31,16 +31,29 @@
     .checkbox-item input { margin-top: 3px; margin-right: 12px; transform: scale(1.3); accent-color: var(--cor-secundaria); cursor: pointer; }
     .checkbox-item label { font-size: 0.95rem; line-height: 1.4; color: #334155; cursor: pointer; }
     .plano-item { padding: 20px; border: 1px solid #e2e8f0; border-left: 6px solid var(--cor-secundaria); margin-bottom: 18px; border-radius: 14px; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: transform 0.2s; }
-    .plano-item:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
-    .btn-camera { padding: 10px 16px; border: none; border-radius: 10px; cursor: pointer; font-size: 0.9rem; color: white; font-weight: 600; width: 100%; display: block; margin-top: 12px; transition: 0.2s; }
-    .btn-camera:hover { filter: brightness(1.1); }
+    
+    /* ACORDEÕES PARA RECURSOS - MOBILIDADE */
+    details.grupo-recursos { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; margin-bottom: 12px; overflow: hidden; transition: all 0.3s; }
+    details.grupo-recursos[open] { box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-color: #94a3b8; }
+    details.grupo-recursos summary { padding: 14px 18px; font-weight: 700; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; color: #334155; font-size: 1.05rem; }
+    details.grupo-recursos summary::-webkit-details-marker { display: none; }
+    details.grupo-recursos summary::after { content: '▼'; font-size: 0.8rem; color: #94a3b8; transition: transform 0.3s; }
+    details.grupo-recursos[open] summary::after { transform: rotate(180deg); }
+    .grid-checkboxes { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 15px; border-top: 1px solid #e2e8f0; }
+    @media (min-width: 600px) { .grid-checkboxes { grid-template-columns: 1fr 1fr; } }
+    
+    /* DESTAQUE METODOLOGIA ACTIVA */
+    details.destaque-metodologia { border: 2px solid #8b5cf6; }
+    details.destaque-metodologia summary { background: #f5f3ff; color: #6d28d9; }
+    details.destaque-metodologia summary::after { color: #8b5cf6; }
+
     #modalQR { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); backdrop-filter: blur(5px); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
     #imgQRCode { background: white; padding: 20px; border-radius: 16px; max-width: 80%; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
     #btnFecharQR { margin-top: 20px; padding: 12px 24px; background: #e74c3c; color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
   </style>
 </head>
 <body>
-  <!-- TELA 1: WORKSPACE -->
+  <!-- TELA WORKSPACE -->
   <div id="telaWorkspace" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1e293b, #0f172a); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;">
     <div style="background: rgba(255,255,255,0.05); padding: 40px; border-radius: 24px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); text-align: center; max-width: 400px; width: 90%;">
       <h2 style="margin-bottom: 10px; font-size: 1.8rem;">🏫 Portal do Educador</h2>
@@ -51,7 +64,7 @@
     </div>
   </div>
 
-  <!-- TELA 2: LOGIN -->
+  <!-- TELA LOGIN -->
   <div id="telaLogin" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--cor-principal); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; transition: background 0.5s;">
     <div style="background: rgba(255,255,255,0.08); padding: 40px; border-radius: 24px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); text-align: center; max-width: 400px; width: 90%;">
       <img id="logoLogin" src="" style="max-width: 90%; height: auto; max-height: 90px; object-fit: contain; margin-bottom: 20px; border-radius: 12px; background: white; padding: 6px;">
@@ -87,9 +100,12 @@
         <div class="bloco-campo" style="flex: 2; min-width: 200px;">
           <label>Tipo de Plano</label>
           <select id="tipoPlano">
-            <option value="Plano de Aula Diário">📅 Plano de Aula Diário</option>
-            <option value="Plano Semanal">📅 Plano Semanal</option>
+            <option value="Plano de Aula">📅 Plano de Aula</option>
             <option value="Sequência Didática">📑 Sequência Didática</option>
+            <option value="Plano de Unidade">📦 Plano de Unidade</option>
+            <option value="Roteiro de Aula">📝 Roteiro de Aula</option>
+            <option value="Projeto">🚀 Projeto</option>
+            <option value="Projeto Interdisciplinar">🔗 Projeto Interdisciplinar</option>
           </select>
         </div>
         <div class="bloco-campo" style="flex: 1; min-width: 140px;">
@@ -103,15 +119,12 @@
           <label>Componente Curricular</label>
           <select id="componente" onchange="buscarMatriz()" required><option value="">Aguardando...</option></select>
         </div>
-        
-        <!-- MUDANÇA: Turmas agora são Checkboxes Múltiplos -->
         <div class="bloco-campo" style="flex: 1; min-width: 200px;">
           <label>Turma(s) - Pode marcar várias!</label>
           <div id="areaTurmas" style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 10px; background: #fdfdfd; max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
             <span style="color:#94a3b8; font-size:0.95rem;">Aguardando login...</span>
           </div>
         </div>
-        
         <div class="bloco-campo" style="flex: 1; min-width: 140px;">
           <label>Trimestre</label>
           <select id="selTrimestre" onchange="buscarMatriz()" required>
@@ -149,18 +162,124 @@
 
           <h3>⚡ 3. Metodologia & Execução</h3>
           <div class="bloco-campo">
-            <label>Desenvolvimento da Aula (Cole seu texto aqui)</label>
-            <textarea id="desenvolvimento"></textarea>
+            <label>Desenvolvimento da Aula (Descreva o passo a passo)</label>
+            <textarea id="desenvolvimento" placeholder="Cole aqui o texto da sua aula..."></textarea>
+            
+            <!-- BOTÕES MÁGICOS DE IA -->
+            <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" onclick="abrirIA('gemini')" style="flex: 1; min-width: 200px; background: linear-gradient(135deg, #1e3a8a, #8b5cf6); color: white; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1rem; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); transition: 0.2s;">
+                  ✨ Ideias com Gemini
+                </button>
+                <button type="button" onclick="abrirIA('chatgpt')" style="flex: 1; min-width: 200px; background: linear-gradient(135deg, #0f766e, #10b981); color: white; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); transition: 0.2s;">
+                  🤖 Ideias com ChatGPT
+                </button>
+              </div>
+              <p style="font-size: 0.85rem; color: #64748b; margin: 0; text-align: center;">Clique para copiar um comando ideal e abrir a sua IA preferida. Depois, cole o texto criado por ela na caixa acima.</p>
+            </div>
           </div>
           
           <div class="bloco-campo">
-            <label>🎒 Recursos Didáticos Utilizados:</label>
-            <div style="background:#f8fafc; padding:15px; border-radius:12px; border:1px solid #e2e8f0; display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-              <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Quadro e Marcador / Giz"> Quadro e Marcador</label>
-              <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Livro Didático"> Livro Didático</label>
-              <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Projetor Multimídia / Lousa Digital"> Projetor / Lousa Digital</label>
-              <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Materiais Impressos (Textos / Atividades)"> Materiais Impressos / Xerox</label>
-            </div>
+            <label style="margin-top: 30px; margin-bottom: 15px; font-size: 1.1rem;">🛠️ Recursos & Metodologias</label>
+            
+            <details class="grupo-recursos">
+              <summary>📚 Recursos Tradicionais</summary>
+              <div class="grid-checkboxes">
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Livro didático"> Livro didático</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Apostilas"> Apostilas</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Quadro branco e pincel"> Quadro branco e pincel</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Atividades impressas"> Atividades impressas</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Mapas e/ou atlas físicos"> Mapas e/ou atlas físicos</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Cartazes e murais temáticos"> Cartazes e murais temáticos</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Fichas de leitura e exercícios impressos"> Fichas de leitura e exercícios impressos</label>
+              </div>
+            </details>
+
+            <details class="grupo-recursos">
+              <summary>💻 Recursos Digitais</summary>
+              <div class="grid-checkboxes">
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Plataformas de aprendizagem"> Plataformas de aprendizagem</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Videoaulas no YouTube ou plataformas próprias"> Videoaulas (YouTube, etc)</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Jogos digitais educativos"> Jogos digitais educativos</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aplicativos de avaliação online"> Aplicativos de avaliação online</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Podcasts educativos"> Podcasts educativos</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Ferramentas de realidade aumentada/virtual"> Realidade aumentada/virtual</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Softwares de simulação"> Softwares de simulação</label>
+              </div>
+            </details>
+
+            <details class="grupo-recursos">
+              <summary>🎲 Recursos Lúdicos</summary>
+              <div class="grid-checkboxes">
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Jogos de tabuleiro"> Jogos de tabuleiro</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Quebra-cabeças temáticos"> Quebra-cabeças temáticos</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Caça-palavras e cruzadinhas"> Caça-palavras e cruzadinhas</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Teatro e dramatizações"> Teatro e dramatizações</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Músicas educativas"> Músicas educativas</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Contação de histórias"> Contação de histórias</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Dinâmicas de grupo"> Dinâmicas de grupo</label>
+              </div>
+            </details>
+
+            <details class="grupo-recursos">
+              <summary>📝 Recursos de Avaliação</summary>
+              <div class="grid-checkboxes">
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Provas diagnósticas impressas"> Provas diagnósticas impressas</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Simulados online por disciplina"> Simulados online</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Rubricas de avaliação por competência"> Rubricas de avaliação</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Portfólios digitais ou físicos"> Portfólios digitais ou físicos</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Autoavaliação e avaliação por pares"> Autoavaliação e pares</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Questionários interativos"> Questionários interativos</label>
+              </div>
+            </details>
+
+            <details class="grupo-recursos">
+              <summary>🌱 Recursos Socioemocionais</summary>
+              <div class="grid-checkboxes">
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Projetos de empatia e solidariedade"> Empatia e solidariedade</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Atividades de mindfulness"> Mindfulness e respiração</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Jogos cooperativos"> Jogos cooperativos</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Dinâmicas de resolução de conflitos"> Resolução de conflitos</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Diários reflexivos"> Diários reflexivos</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Roda de conversa sobre valores e cidadania"> Roda de conversa (Cidadania)</label>
+              </div>
+            </details>
+
+            <details class="grupo-recursos">
+              <summary>🗂️ Recursos Prontos e Editáveis</summary>
+              <div class="grid-checkboxes">
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Planos de aula prontos"> Planos de aula prontos (BNCC)</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Atividades imprimíveis por disciplina"> Atividades imprimíveis</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Sequências didáticas adaptáveis"> Sequências didáticas adaptáveis</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Slides prontos para apresentação"> Slides prontos</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Modelos de provas e exercícios"> Modelos de provas</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Fichas de leitura e interpretação"> Fichas de leitura e interpretação</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Projetos interdisciplinares já estruturados"> Projetos interdisciplinares estruturados</label>
+              </div>
+            </details>
+
+            <!-- METODOLOGIAS EM DESTAQUE E SEMPRE ABERTO -->
+            <details class="grupo-recursos destaque-metodologia" open>
+              <summary>📌 Metodologias Ativas</summary>
+              <div class="grid-checkboxes">
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem Baseada em Problemas"> Aprendizagem Baseada em Problemas</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Sala de Aula Invertida"> Sala de Aula Invertida</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem Baseada em Projetos"> Aprendizagem Baseada em Projetos</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Gamificação"> Gamificação</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Estudo de Caso"> Estudo de Caso</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Rotação por Estações"> Rotação por Estações</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Instrução pelos Pares"> Instrução pelos Pares</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Design Thinking"> Design Thinking</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem Baseada em Investigação"> Aprendizagem Baseada em Investigação</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem Colaborativa"> Aprendizagem Colaborativa</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem por Pares"> Aprendizagem por Pares</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem Baseada em Competências"> Aprendizagem Baseada em Competências</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem Experiencial"> Aprendizagem Experiencial</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem Baseada em Desafios"> Aprendizagem Baseada em Desafios</label>
+                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem Maker"> Aprendizagem Maker</label>
+              </div>
+            </details>
+
           </div>
 
           <button id="btnGerar" class="btn-gerar">🚀 Gerar Plano Oficial & Enviar para Supervisão</button>
