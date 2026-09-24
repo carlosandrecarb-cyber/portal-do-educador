@@ -37,7 +37,6 @@ async function fazerLogin() {
       document.getElementById('infoUsuarioBoasVindas').style.display = 'inline-block';
       document.getElementById('infoUsuarioBoasVindas').innerText = `👋 Docente: ${r.nome}`;
       
-      // Passa as disciplinas e turmas diretas do Banco de Dados para a interface
       carregarComponentesProfessor(r.componentes, r.turmas);
     } else { msg.innerText = r.mensagem || "Erro de login."; }
   } catch (e) { msg.innerText = "⚠️ Erro de conexão com o servidor."; }
@@ -47,13 +46,11 @@ function carregarComponentesProfessor(componentesLista, turmasLista) {
   const selComp = document.getElementById('componente');
   const areaTurmas = document.getElementById('areaTurmas');
 
-  // Disciplina Única (dropdown)
   let htmlComp = '<option value="">Selecione a disciplina...</option>';
   const compArray = (componentesLista?.length && componentesLista[0] !== "") ? componentesLista : ["Matemática", "Língua Portuguesa", "Geografia", "História", "Ciências", "Arte", "Educação Física", "Ensino Religioso", "Língua Inglesa"];
   compArray.forEach(c => htmlComp += `<option value="${c}">${c}</option>`);
   selComp.innerHTML = htmlComp;
 
-  // Turmas Múltiplas (Checkboxes em vez de dropdown)
   let htmlTurma = '';
   const turmasArray = (turmasLista?.length && turmasLista[0] !== "") ? turmasLista : ["6º Ano", "7º Ano", "8º Ano", "9º Ano"];
   turmasArray.forEach(t => {
@@ -67,7 +64,6 @@ function carregarComponentesProfessor(componentesLista, turmasLista) {
 
 async function buscarMatriz() {
   const componente = document.getElementById('componente').value;
-  // Captura todas as turmas que o professor marcou o "check"
   const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
   const trimestre = document.getElementById('selTrimestre') ? document.getElementById('selTrimestre').value : "3º Trimestre";
   
@@ -76,7 +72,6 @@ async function buscarMatriz() {
     return;
   }
   
-  // Usa o ano da *primeira turma marcada* para procurar a matriz
   const anoBaseParaBusca = turmasMarcadas[0]; 
   
   document.getElementById('unidade').innerHTML = '<option value="">⏳ Buscando matriz...</option>';
@@ -148,6 +143,46 @@ function montarCheckboxes() {
   let htmlObj = `<label style="font-weight:700; color:#0284c7; display:block; margin-bottom:8px;">${tituloConteudo}</label>`;
   conteudoSet.forEach(cont => htmlObj += `<div class="checkbox-item"><input type="checkbox" name="chkObjeto" value="${cont}"><label>${cont}</label></div>`);
   document.getElementById('listaObjetos').innerHTML = conteudoSet.size > 0 ? htmlObj : '<p>Nenhum conteúdo localizado.</p>';
+}
+
+// ==========================================
+// FUNÇÃO MÁGICA DE INTEGRAÇÃO COM GEMINI / CHATGPT
+// ==========================================
+function abrirIA(tipoIA) {
+  const comp = document.getElementById('componente').value || "[Sua Disciplina]";
+  const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
+  const turma = turmasMarcadas.length > 0 ? turmasMarcadas.join(" e ") : "[Sua Turma]";
+  const tema = document.getElementById('unidade').value || "[Tema da Aula]";
+  
+  // O Comando Inteligente e pré-formatado que o professor vai usar
+  const promptIA = `Atue como um professor especialista em ${comp}. Crie o "Desenvolvimento da Aula" (um passo a passo claro de como a aula vai acontecer na prática) para a turma: ${turma}. O tema central da aula é: "${tema}". 
+Por favor, divida o texto de forma prática nestes 3 tópicos:
+1. Introdução (Como engajar os alunos no início)
+2. Desenvolvimento (O que será feito, atividades e explicações)
+3. Fechamento (Como avaliar ou resumir a aula)
+
+Seja direto, utilize metodologias ativas e evite textos teóricos demais. Escreva de forma que eu possa colar diretamente no meu Plano de Aula oficial.`;
+
+  let urlIA = "";
+  let nomeIA = "";
+
+  if (tipoIA === 'gemini') {
+    urlIA = "https://gemini.google.com/app";
+    nomeIA = "Gemini";
+  } else if (tipoIA === 'chatgpt') {
+    urlIA = "https://chatgpt.com/";
+    nomeIA = "ChatGPT";
+  }
+
+  // Tenta copiar para a área de transferência do professor e depois abre a IA
+  navigator.clipboard.writeText(promptIA).then(() => {
+      alert(`✨ MÁGICA FEITA!\n\nCopiámos um comando (prompt) perfeito para o seu telemóvel/computador.\n\nO ${nomeIA} vai abrir numa nova janela. Basta colar (Ctrl+V) lá na conversa para ele escrever a sua aula!`);
+      window.open(urlIA, "_blank");
+  }).catch(() => {
+      // Caso o dispositivo bloqueie a cópia automática
+      alert(`⚠️ Não foi possível copiar automaticamente para a área de transferência do seu dispositivo, mas vamos redirecioná-lo para o ${nomeIA} mesmo assim. Lá você pode pedir-lhe ajuda com a aula!`);
+      window.open(urlIA, "_blank");
+  });
 }
 
 const formatarData = (dataBase) => {
@@ -222,8 +257,11 @@ async function carregarMeusPlanos() {
       if (!meus.length) return container.innerHTML = "<p>Nenhum plano gerado.</p>";
       let html = "";
       meus.reverse().forEach(p => {
+        let corStatus = p.status.includes('Aprovado') ? '#10b981' : (p.status.includes('Devolvido') ? '#ef4444' : '#f59e0b');
         html += `<div class="plano-item"><strong>📅 Data:</strong> ${p.data} | <strong>📚 Disciplina:</strong> ${p.componente} <br><strong>🏷️ Turmas:</strong> ${p.turma}<br><br>
-        <a href="${p.docUrl}" target="_blank" style="background:#2563eb; color:white; padding:6px 12px; text-decoration:none; border-radius:6px; font-weight:bold;">📄 Abrir Google Doc</a> <button onclick="abrirModalQR('${p.pastaUrl}')">📱 Enviar Evidências (QR)</button></div>`;
+        <span style="display:inline-block; margin-bottom:10px; padding:4px 10px; background:${corStatus}; color:white; border-radius:6px; font-size:0.85rem; font-weight:bold;">${p.status}</span><br>
+        <a href="${p.docUrl}" target="_blank" style="background:#2563eb; color:white; padding:6px 12px; text-decoration:none; border-radius:6px; font-weight:bold; margin-right: 10px;">📄 Abrir Google Doc</a> 
+        <button onclick="abrirModalQR('${p.pastaUrl}')" style="background:#1e293b; border:none; color:white; padding:6px 12px; text-decoration:none; border-radius:6px; font-weight:bold; cursor:pointer;">📱 Enviar Evidências (QR)</button></div>`;
       });
       container.innerHTML = html;
     }
