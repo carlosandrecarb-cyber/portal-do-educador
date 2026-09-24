@@ -13,7 +13,7 @@ function mudarAba(abaId, btn) {
 
 function verificarEscolaManual() {
   const codigo = document.getElementById('inputCodigoEscola').value.trim().toLowerCase();
-  if (codigo.length > 1) { // Pode definir a senha padrão da escola aqui
+  if (codigo.length > 1) {
     document.getElementById('telaWorkspace').style.display = 'none';
     document.getElementById('telaLogin').style.display = 'flex';
     document.getElementById('tituloNomeEscola').innerText = "Escola Mestra Aurora";
@@ -26,12 +26,10 @@ async function fazerLogin() {
   const usuario = document.getElementById('loginUsuario').value.trim();
   const senha = document.getElementById('loginSenha').value.trim();
   const msg = document.getElementById('msgLogin');
-  msg.innerText = "⏳ A autenticar...";
-  
+  msg.innerText = "⏳ A Autenticar...";
   try {
     const res = await fetch(URL_API, { method: 'POST', redirect: 'follow', headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ acao: "login", usuario, senha }) });
     const r = await res.json();
-    
     if (r.status === "sucesso") {
       professorLogado = r.nome;
       document.getElementById('telaLogin').style.display = 'none';
@@ -39,69 +37,61 @@ async function fazerLogin() {
       document.getElementById('infoUsuarioBoasVindas').style.display = 'inline-block';
       document.getElementById('infoUsuarioBoasVindas').innerText = `👋 Docente: ${r.nome}`;
       
-      // Aqui acontece a mágica do acesso único: Carregamos as turmas e disciplinas exatas dele!
+      // Passa as disciplinas e turmas diretas do Banco de Dados para a interface
       carregarComponentesProfessor(r.componentes, r.turmas);
-    } else { 
-      msg.innerText = r.mensagem || "Erro. Verifique utilizador e senha."; 
-    }
-  } catch (e) { msg.innerText = "⚠️ Erro de comunicação com o servidor."; }
+    } else { msg.innerText = r.mensagem || "Erro de login."; }
+  } catch (e) { msg.innerText = "⚠️ Erro de conexão com o servidor."; }
 }
 
-// ==========================================
-// FUNÇÃO QUE MONTA OS MENUS PERSONALIZADOS DO PROFESSOR
-// ==========================================
 function carregarComponentesProfessor(componentesLista, turmasLista) {
   const selComp = document.getElementById('componente');
-  const selTurma = document.getElementById('turmaSelecionada');
+  const areaTurmas = document.getElementById('areaTurmas');
 
-  // Monta o menu de Disciplinas
-  let htmlComp = '<option value="">Selecione a disciplina desta aula...</option>';
-  if (componentesLista && componentesLista.length > 0 && componentesLista[0] !== "") {
-    componentesLista.forEach(c => htmlComp += `<option value="${c}">${c}</option>`);
-  } else {
-    htmlComp += `<option value="">⚠️ Nenhuma disciplina cadastrada pela gestão.</option>`;
-  }
+  // Disciplina Única (dropdown)
+  let htmlComp = '<option value="">Selecione a disciplina...</option>';
+  const compArray = (componentesLista?.length && componentesLista[0] !== "") ? componentesLista : ["Matemática", "Língua Portuguesa", "Geografia", "História", "Ciências", "Arte", "Educação Física", "Ensino Religioso", "Língua Inglesa"];
+  compArray.forEach(c => htmlComp += `<option value="${c}">${c}</option>`);
   selComp.innerHTML = htmlComp;
 
-  // Monta o menu de Turmas
-  let htmlTurma = '<option value="">Selecione a turma...</option>';
-  if (turmasLista && turmasLista.length > 0 && turmasLista[0] !== "") {
-    turmasLista.forEach(t => htmlTurma += `<option value="${t}">${t}</option>`);
-  } else {
-    htmlTurma += `<option value="">⚠️ Nenhuma turma cadastrada pela gestão.</option>`;
-  }
-  selTurma.innerHTML = htmlTurma;
+  // Turmas Múltiplas (Checkboxes em vez de dropdown)
+  let htmlTurma = '';
+  const turmasArray = (turmasLista?.length && turmasLista[0] !== "") ? turmasLista : ["6º Ano", "7º Ano", "8º Ano", "9º Ano"];
+  turmasArray.forEach(t => {
+    htmlTurma += `<label style="display:flex; align-items:center; cursor:pointer; padding:6px 10px; background:#f8fafc; border:1px solid #edf2f7; border-radius:8px; margin:0;">
+                    <input type="checkbox" name="chkTurmaProf" value="${t}" onchange="buscarMatriz()" style="transform:scale(1.2); margin-right:10px; accent-color:var(--cor-secundaria);">
+                    ${t}
+                  </label>`;
+  });
+  areaTurmas.innerHTML = htmlTurma;
 }
 
-// ==========================================
-// BUSCA A MATRIZ COM BASE NA DISCIPLINA E TURMA ESCOLHIDA
-// ==========================================
 async function buscarMatriz() {
   const componente = document.getElementById('componente').value;
-  const turmaExata = document.getElementById('turmaSelecionada').value;
+  // Captura todas as turmas que o professor marcou o "check"
+  const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
   const trimestre = document.getElementById('selTrimestre') ? document.getElementById('selTrimestre').value : "3º Trimestre";
   
-  if (!componente || !turmaExata || !trimestre) return;
+  if (!componente || turmasMarcadas.length === 0 || !trimestre) {
+    document.getElementById('blocoCurriculo').style.display = 'none';
+    return;
+  }
   
-  document.getElementById('unidade').innerHTML = '<option value="">⏳ A procurar na matriz oficial...</option>';
+  // Usa o ano da *primeira turma marcada* para procurar a matriz
+  const anoBaseParaBusca = turmasMarcadas[0]; 
+  
+  document.getElementById('unidade').innerHTML = '<option value="">⏳ Buscando matriz...</option>';
   document.getElementById('blocoCurriculo').style.display = 'block';
 
   try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "buscarMatrizTrimestre", componente: componente, trimestre: trimestre, ano: turmaExata }) });
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "buscarMatrizTrimestre", componente: componente, trimestre: trimestre, ano: anoBaseParaBusca }) });
     const r = await res.json();
     dadosMatrizGlobal = r.itens || [];
-    
     let htmlUnidades = '<option value="">Selecione a Unidade Temática...</option>';
-    let unidadesUnicas = [...new Set(dadosMatrizGlobal.map(i => i.unidade))];
+    [...new Set(dadosMatrizGlobal.map(i => i.unidade))].forEach(u => htmlUnidades += `<option value="${u}">${u}</option>`);
     
-    if(unidadesUnicas.length > 0) {
-        unidadesUnicas.forEach(u => htmlUnidades += `<option value="${u}">${u}</option>`);
-    } else {
-        htmlUnidades = '<option value="">Nenhuma matriz encontrada para este filtro.</option>';
-    }
-    
+    if(dadosMatrizGlobal.length === 0) { htmlUnidades = '<option value="">⚠️ Nenhuma matriz encontrada.</option>'; }
     document.getElementById('unidade').innerHTML = htmlUnidades;
-  } catch(e) { document.getElementById('unidade').innerHTML = '<option value="">Erro ao carregar matriz.</option>'; }
+  } catch(e) { document.getElementById('unidade').innerHTML = '<option value="">Erro na busca.</option>'; }
 }
 
 function montarCheckboxes() {
@@ -112,7 +102,6 @@ function montarCheckboxes() {
 
   const itens = dadosMatrizGlobal.filter(i => i.unidade === unidadeSelecionada);
   
-  // Definição dos rótulos dinâmicos da Interface
   let tituloHabPrincipal = "Habilidade do CRMG:";
   let tituloConteudo = "Conteúdos Relacionados:";
   let mostrarRecSup = false;
@@ -130,7 +119,7 @@ function montarCheckboxes() {
   let conteudoSet = new Set();
 
   itens.forEach(item => {
-    if (item.habPriorizada && item.habPriorizada !== "-") { htmlPri += `<div class="checkbox-item"><input type="radio" name="radioHabPriorizada" value="${item.habPriorizada}"><label>${item.habPriorizada}</label></div>`; }
+    if (item.habPriorizada && item.habPriorizada !== "-") htmlPri += `<div class="checkbox-item"><input type="radio" name="radioHabPriorizada" value="${item.habPriorizada}"><label>${item.habPriorizada}</label></div>`;
     
     if (mostrarRecSup) {
       if (item.habRecomposicao && item.habRecomposicao !== "-") htmlRec += `<div class="checkbox-item"><input type="checkbox" name="chkHabRecomposicao" value="${item.habRecomposicao}"><label>${item.habRecomposicao}</label></div>`;
@@ -146,13 +135,12 @@ function montarCheckboxes() {
     }
   });
 
-  let painelHabilidades = `<label style="font-weight:700;">${tituloHabPrincipal}</label>${htmlPri || '<p>Nenhuma.</p>'}`;
-  
+  let painelHabilidades = `<label style="font-weight:700; color:#d97706;">${tituloHabPrincipal}</label>${htmlPri || '<p>Nenhuma.</p>'}`;
   if (mostrarRecSup) {
-    painelHabilidades += `${htmlRec ? `<label style="font-weight:700; margin-top:10px;">Habilidades de Recomposição:</label>${htmlRec}` : ''}`;
-    painelHabilidades += `${htmlSup ? `<label style="font-weight:700; margin-top:10px;">Habilidades de Suporte:</label>${htmlSup}` : ''}`;
+    painelHabilidades += `${htmlRec ? `<label style="font-weight:700; color:#d97706; margin-top:10px;">Habilidades de Recomposição:</label>${htmlRec}` : ''}`;
+    painelHabilidades += `${htmlSup ? `<label style="font-weight:700; color:#d97706; margin-top:10px;">Habilidades de Suporte:</label>${htmlSup}` : ''}`;
   } else if (mostrarSocioemocional) {
-    painelHabilidades += `${htmlRec ? `<label style="font-weight:700; margin-top:10px;">Habilidades Socioemocionais:</label>${htmlRec}` : ''}`;
+    painelHabilidades += `${htmlRec ? `<label style="font-weight:700; color:#d97706; margin-top:10px;">Habilidades Socioemocionais:</label>${htmlRec}` : ''}`;
   }
 
   document.getElementById('listaHabilidades').innerHTML = painelHabilidades;
@@ -169,6 +157,9 @@ const formatarData = (dataBase) => {
 };
 
 async function enviarPlanoAulaAPI() {
+  const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
+  if(turmasMarcadas.length === 0) { alert("⚠️ Selecione pelo menos uma Turma marcando a caixinha."); return; }
+
   const btn = document.getElementById('btnGerar');
   btn.innerText = "⏳ A Gerar Documento Oficial...";
   btn.disabled = true;
@@ -184,8 +175,9 @@ async function enviarPlanoAulaAPI() {
   const objs = Array.from(document.querySelectorAll('input[name="chkObjeto"]:checked')).map(c => c.value).join(" | ");
   const recursos = Array.from(document.querySelectorAll('input[name="chk_recursos"]:checked')).map(c => c.value).join(", ");
   
-  const turmaInteira = document.getElementById('turmaSelecionada').value;
-  const anoEscolaridade = turmaInteira.split('º')[0] + "º Ano"; // Extrai '6º Ano' de '6º REG 1'
+  // Une todas as turmas (Ex: "6º Ano A e 6º Ano B")
+  const turmaInteira = turmasMarcadas.join(" e ");
+  const anoEscolaridade = turmasMarcadas[0].split('º')[0] + "º Ano"; 
 
   const dadosPlano = {
     professor: document.getElementById('nomeProfessor').value,
@@ -211,11 +203,12 @@ async function enviarPlanoAulaAPI() {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "gerarPlano", planoData: dadosPlano }) });
     const r = await res.json();
     if (r.status === "sucesso") {
+      alert("✅ Plano gerado com sucesso!");
       window.open(r.url, '_blank');
       mudarAba('meusPlanos', null);
     } else { alert("Erro: " + r.mensagem); }
-  } catch(e) { alert("Erro de conexão com o servidor Google."); } 
-  finally { btn.innerText = "🚀 Gerar Plano Oficial & Enviar"; btn.disabled = false; }
+  } catch(e) { alert("Erro de conexão com o servidor."); } 
+  finally { btn.innerText = "🚀 Gerar Plano Oficial & Enviar para Supervisão"; btn.disabled = false; }
 }
 
 async function carregarMeusPlanos() {
@@ -226,19 +219,11 @@ async function carregarMeusPlanos() {
     const r = await res.json();
     if (r.status === "sucesso" && r.registros) {
       const meus = r.registros.filter(i => i.professor.toLowerCase() === professorLogado.toLowerCase());
-      if (!meus.length) return container.innerHTML = "<p>Nenhum plano gerado ainda.</p>";
+      if (!meus.length) return container.innerHTML = "<p>Nenhum plano gerado.</p>";
       let html = "";
       meus.reverse().forEach(p => {
-        let corStatus = p.status.includes('Aprovado') ? '#10b981' : (p.status.includes('Devolvido') ? '#ef4444' : '#f59e0b');
-        html += `<div class="plano-item">
-          <strong>📅 Data:</strong> ${p.data} | <strong>📚 Disciplina:</strong> ${p.componente} (${p.turma})<br>
-          <span style="display:inline-block; margin-top:8px; padding:4px 10px; background:${corStatus}; color:white; border-radius:6px; font-size:0.85rem; font-weight:bold;">${p.status}</span>
-          <br><br>
-          <div style="display:flex; gap:10px;">
-            <a href="${p.docUrl}" target="_blank" style="text-decoration:none; background:#2563eb; color:white; padding:8px 12px; border-radius:8px; font-size:0.9rem;">📄 Abrir Google Doc</a>
-            <button onclick="abrirModalQR('${p.pastaUrl}')" style="background:#1e293b; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">📱 Anexar Evidências (QR)</button>
-          </div>
-        </div>`;
+        html += `<div class="plano-item"><strong>📅 Data:</strong> ${p.data} | <strong>📚 Disciplina:</strong> ${p.componente} <br><strong>🏷️ Turmas:</strong> ${p.turma}<br><br>
+        <a href="${p.docUrl}" target="_blank" style="background:#2563eb; color:white; padding:6px 12px; text-decoration:none; border-radius:6px; font-weight:bold;">📄 Abrir Google Doc</a> <button onclick="abrirModalQR('${p.pastaUrl}')">📱 Enviar Evidências (QR)</button></div>`;
       });
       container.innerHTML = html;
     }
