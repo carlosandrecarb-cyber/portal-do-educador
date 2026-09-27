@@ -21,9 +21,8 @@
     h3 { font-size: 1.2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: var(--cor-principal); margin-top: 30px; display: flex; align-items: center; gap: 8px; }
     .bloco-campo { margin-bottom: 20px; }
     .bloco-campo label { display: block; font-weight: 600; margin-bottom: 8px; color: #4a5568; font-size: 0.95rem; }
-    .bloco-campo input[type="text"], .bloco-campo input[type="number"], .bloco-campo select, .bloco-campo textarea, input[type="date"] { width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 12px; box-sizing: border-box; font-family: inherit; font-size: 1rem; transition: all 0.2s; background: #fdfdfd; }
-    .bloco-campo input:focus, .bloco-campo select:focus, .bloco-campo textarea:focus { border-color: var(--cor-secundaria); outline: none; background: white; box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.1); }
-    .bloco-campo textarea { resize: vertical; min-height: 140px; }
+    .bloco-campo input[type="text"], .bloco-campo input[type="number"], .bloco-campo select, input[type="date"] { width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 12px; box-sizing: border-box; font-family: inherit; font-size: 1rem; transition: all 0.2s; background: #fdfdfd; }
+    .bloco-campo input:focus, .bloco-campo select:focus { border-color: var(--cor-secundaria); outline: none; background: white; box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.1); }
     .btn-gerar { background: linear-gradient(135deg, var(--cor-secundaria), #219653); color: white; padding: 16px 24px; border: none; border-radius: 14px; cursor: pointer; font-size: 1.1rem; font-weight: 700; width: 100%; transition: all 0.3s ease; margin-top: 25px; box-shadow: 0 6px 20px rgba(39, 174, 96, 0.3); }
     .btn-gerar:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(39, 174, 96, 0.4); filter: brightness(1.05); }
     .checkbox-item { margin-bottom: 10px; display: flex; align-items: flex-start; background: #f8fafc; padding: 10px 14px; border-radius: 10px; border: 1px solid #edf2f7; transition: background 0.2s; }
@@ -52,10 +51,17 @@
     #btnFecharQR { margin-top: 20px; padding: 12px 24px; background: #e74c3c; color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
     .btn-sair { position: absolute; top: 20px; right: 20px; background: #e74c3c; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; display: none; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     .btn-sair:hover { background: #c0392b; transform: translateY(-2px); }
+
+    /* ESTILOS PARA O NOVO EDITOR DE TEXTO RICO (DESENVOLVIMENTO DA AULA) */
+    #desenvolvimento[placeholder]:empty:before { content: attr(placeholder); color: #94a3b8; pointer-events: none; display: block; }
+    #desenvolvimento:focus { border-color: var(--cor-secundaria); outline: none; background: white; box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.1); }
   </style>
 </head>
 <body>
+
+  <!-- ========================================================================= -->
   <!-- TELA WORKSPACE -->
+  <!-- ========================================================================= -->
   <div id="telaWorkspace" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1e293b, #0f172a); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;">
     <div style="background: rgba(255,255,255,0.05); padding: 40px; border-radius: 24px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); text-align: center; max-width: 400px; width: 90%;">
       <h2 style="margin-bottom: 10px; font-size: 1.8rem;">🏫 Portal do Educador</h2>
@@ -66,21 +72,28 @@
     </div>
   </div>
 
+  <!-- ========================================================================= -->
   <!-- TELA LOGIN -->
+  <!-- ========================================================================= -->
   <div id="telaLogin" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--cor-principal); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; transition: background 0.5s;">
     <div style="background: rgba(255,255,255,0.08); padding: 40px; border-radius: 24px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); text-align: center; max-width: 400px; width: 90%;">
-      <img id="logoLogin" src="" style="max-width: 90%; height: auto; max-height: 90px; object-fit: contain; margin-bottom: 20px; border-radius: 12px; background: white; padding: 6px;">
+      
+      <!-- [ 🔴 ATENÇÃO: COLOQUE AQUI O LINK DA IMAGEM DO LOGO DA SUA ESCOLA (LOGIN) ] -->
+      <img id="logoLogin" src="https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5" style="max-width: 90%; height: auto; max-height: 90px; object-fit: contain; margin-bottom: 20px; border-radius: 12px; background: white; padding: 6px;">
+      
       <h2 id="tituloNomeEscola" style="margin: 0 0 5px 0;">Acesso Restrito</h2>
       <p style="margin-bottom: 25px; color: #e2e8f0; font-size: 0.95rem;">✨ Portal do Educador</p>
-      <input type="text" id="loginUsuario" placeholder="👤 Usuário" style="padding: 14px; margin-bottom: 12px; width: 100%; border-radius: 12px; border: none; font-size: 1rem; box-sizing: border-box; background: #fff;">
-      <input type="password" id="loginSenha" placeholder="🔒 Senha" style="padding: 14px; margin-bottom: 15px; width: 100%; border-radius: 12px; border: none; font-size: 1rem; box-sizing: border-box; background: #fff;">
+      <input type="text" id="loginUsuario" placeholder="👤 Usuário" style="padding: 14px; margin-bottom: 12px; width: 100%; border-radius: 12px; border: none; font-size: 1rem; box-sizing: border-box; background: #fff; color: #000;">
+      <input type="password" id="loginSenha" placeholder="🔒 Senha" style="padding: 14px; margin-bottom: 15px; width: 100%; border-radius: 12px; border: none; font-size: 1rem; box-sizing: border-box; background: #fff; color: #000;">
       <button onclick="fazerLogin()" style="padding: 14px; width: 100%; background: var(--cor-secundaria); border: none; border-radius: 12px; color: white; font-weight: 700; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">ENTRAR NO SISTEMA ✨</button>
       <p id="msgLogin" style="color: #fed7d7; margin-top: 15px; font-size: 0.9rem; font-weight: 600;"></p>
     </div>
   </div>
 
   <header>
-    <img id="logoHeader" src="" class="logo-escola">
+    <!-- [ 🔴 ATENÇÃO: COLOQUE AQUI O LINK DA IMAGEM DO LOGO DA SUA ESCOLA (CABEÇALHO) ] -->
+    <img id="logoHeader" src="https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5" class="logo-escola">
+    
     <h2>🎓 Portal do Educador</h2>
     <div id="infoUsuarioBoasVindas" style="margin-top: 15px; background: rgba(255,255,255,0.15); padding: 8px 20px; border-radius: 30px; font-size: 0.95rem; font-weight: 700; color: #fef08a; display: none; backdrop-filter: blur(5px);"></div>
     <button id="btnSairSistema" class="btn-sair" onclick="sairDoSistema()">Sair 🚪</button>
@@ -92,7 +105,12 @@
       <button class="tab-btn" onclick="mudarAba('meusPlanos', this)">📂 Meus Planos</button>
     </div>
 
+    <!-- ========================================================================= -->
+    <!-- ABA 1: GERAR PLANO -->
+    <!-- ========================================================================= -->
     <div id="gerarPlano" class="tab-content active">
+      
+      <!-- SECÇÃO 1 -->
       <h3>👤 1. Identificação da Aula</h3>
       <div class="bloco-campo">
         <label>Nome do(a) Professor(a)</label>
@@ -147,9 +165,10 @@
         </div>
       </div>
 
+      <!-- BLOCO QUE SÓ APARECE APÓS ESCOLHER A MATRIZ -->
       <div id="blocoCurriculo" style="display:none;">
         
-        <!-- SEÇÃO 2: BASE CURRICULAR -->
+        <!-- SECÇÃO 2 -->
         <h3>📚 2. Base Curricular</h3>
         <div class="bloco-campo">
           <label id="labelUnidadeDinamica">Unidade Temática (Eixo)</label>
@@ -165,7 +184,7 @@
             <div id="listaObjetos" style="background:#f0f9ff; padding:15px; border-radius:12px; border:1px solid #bae6fd; max-height:180px; overflow-y:auto;"></div>
           </div>
 
-          <!-- SEÇÃO 3: RECURSOS E METODOLOGIAS -->
+          <!-- SECÇÃO 3 -->
           <h3>🛠️ 3. Recursos & Metodologias</h3>
           <div class="bloco-campo">
             <label style="margin-bottom: 15px; font-size: 0.95rem; color:#64748b;">Selecione os recursos e práticas que pretende utilizar (a Inteligência Artificial vai ler as suas escolhas).</label>
@@ -233,7 +252,6 @@
               </div>
             </details>
 
-            <!-- METODOLOGIAS EM DESTAQUE E SEMPRE ABERTO -->
             <details class="grupo-recursos destaque-metodologia" open>
               <summary>📌 Metodologias Ativas</summary>
               <div class="grid-checkboxes">
@@ -251,11 +269,10 @@
             </details>
           </div>
 
-          <!-- SEÇÃO 4: METODOLOGIA E IA -->
+          <!-- SECÇÃO 4: METODOLOGIA E IA (COM O NOVO EDITOR RICO) -->
           <h3>⚡ 4. Metodologia & Execução</h3>
           <div class="bloco-campo">
             
-            <!-- BOTÕES MÁGICOS DE IA -->
             <div style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
               <p style="font-size: 0.95rem; color: #4a5568; margin: 0 0 5px 0;"><strong>Precisa de inspiração?</strong> Clique num dos botões abaixo. O sistema vai copiar a sua disciplina, habilidade e recursos escolhidos, e abrirá a IA para planear a aula por si!</p>
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -268,13 +285,19 @@
               </div>
             </div>
 
-            <label>Desenvolvimento da Aula (Cole aqui o resultado da IA ou descreva o seu passo a passo)</label>
-            <textarea id="desenvolvimento" placeholder="Ex: 1. Acolhimento (10 min) - Iniciar a aula com uma questão disparadora..."></textarea>
+            <label style="margin-bottom: 8px; display: block; font-weight: 600; color: #4a5568;">Desenvolvimento da Aula (Pode colar textos com formatação do ChatGPT/Gemini aqui)</label>
+            <!-- NOVA CAIXA DE EDIÇÃO COM FORMATAÇÃO -->
+            <div style="background: #edf2f7; border: 2px solid #e2e8f0; border-bottom: none; border-radius: 12px 12px 0 0; padding: 8px; display: flex; gap: 5px;">
+              <button type="button" onclick="formatarTexto('bold')" style="padding: 5px 10px; background: white; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-weight: bold;">B</button>
+              <button type="button" onclick="formatarTexto('italic')" style="padding: 5px 10px; background: white; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-style: italic;">I</button>
+              <button type="button" onclick="formatarTexto('insertUnorderedList')" style="padding: 5px 10px; background: white; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;">• Lista</button>
+              <button type="button" onclick="formatarTexto('insertOrderedList')" style="padding: 5px 10px; background: white; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;">1. Lista</button>
+            </div>
+            <div id="desenvolvimento" contenteditable="true" style="min-height: 200px; padding: 16px; border: 2px solid #e2e8f0; border-radius: 0 0 12px 12px; background: #fdfdfd; font-family: inherit; font-size: 1rem; overflow-y: auto; line-height: 1.5; color: #2d3748;" placeholder="Cole aqui o resultado da IA... as quebras de linha e negritos serão mantidos."></div>
           </div>
           
-          <!-- SEÇÃO 5: FINALIZAÇÃO -->
+          <!-- SECÇÃO 5: FINALIZAÇÃO -->
           <h3>🏁 5. Finalização e Documentos</h3>
-          <!-- CHECKBOX DO CADERNO DE ANEXOS -->
           <div style="background: #f1f5f9; padding: 15px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #cbd5e1; display: flex; align-items: center; gap: 10px;">
             <input type="checkbox" id="chkGerarAnexos" style="transform: scale(1.3); cursor: pointer;" checked>
             <label for="chkGerarAnexos" style="margin: 0; cursor: pointer; color: #334155; font-weight: 600;">Gerar também o <strong>Caderno de Anexos e Material de Apoio</strong></label>
@@ -285,16 +308,21 @@
       </div>
     </div>
 
+    <!-- ========================================================================= -->
+    <!-- ABA 2: MEUS PLANOS -->
+    <!-- ========================================================================= -->
     <div id="meusPlanos" class="tab-content">
       <h3>📂 Meus Planos & Evidências</h3>
       <div id="listaDePlanos" style="margin-top:20px;">Carregando...</div>
     </div>
   </div>
 
+  <!-- MODAL DO QR CODE -->
   <div id="modalQR">
     <img id="imgQRCode" src="">
     <button id="btnFecharQR" onclick="fecharModalQR()">FECHAR</button>
   </div>
+  
   <script src="script.js"></script>
 </body>
 </html>
