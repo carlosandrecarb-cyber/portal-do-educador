@@ -1,4 +1,4 @@
-const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec"; // 🔴 Substitua pelo link do seu Web App (Codigo.gs)
+const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec"; // 🔴 Substitua pela URL do seu Web App
 var professorLogado = "";
 var dadosMatrizGlobal = [];
 
@@ -37,15 +37,12 @@ async function fazerLogin() {
       document.getElementById('infoUsuarioBoasVindas').style.display = 'inline-block';
       document.getElementById('infoUsuarioBoasVindas').innerText = `👋 Docente: ${r.nome}`;
       
-      // MOSTRA O BOTÃO SAIR APÓS O LOGIN
       document.getElementById('btnSairSistema').style.display = 'block';
-      
       carregarComponentesProfessor(r.componentes, r.turmas);
     } else { msg.innerText = r.mensagem || "Erro de login."; }
   } catch (e) { msg.innerText = "⚠️ Erro de conexão com o servidor."; }
 }
 
-// FUNÇÃO SAIR DO SISTEMA
 function sairDoSistema() {
   professorLogado = "";
   document.getElementById('loginSenha').value = ""; 
@@ -116,6 +113,13 @@ function montarCheckboxes() {
   let mostrarRecSup = false;
   let mostrarSocioemocional = false;
 
+  // EXTRAÇÃO DOS OBJETOS DE FORMA INTELIGENTE (Split por vírgula, linha ou barra)
+  const extrairItensMultiplos = (textoBruto) => {
+    if (!textoBruto || textoBruto === "-") return [];
+    let partes = textoBruto.split(/\n|\s+\|\s+|(?:,(?![^\(]*\)))/);
+    return partes.map(p => p.replace(/^[\-\•\◦]\s*/, "").trim()).filter(p => p.length > 2);
+  };
+
   if (componente === "Língua Portuguesa" || componente === "Matemática") {
     tituloHabPrincipal = "Habilidade Priorizada do ano escolar:";
     tituloConteudo = "Objeto do conhecimento da habilidade priorizada:";
@@ -138,9 +142,9 @@ function montarCheckboxes() {
     }
 
     if (componente === "Língua Portuguesa" || componente === "Matemática") {
-      if (item.objetoConhecimento && item.objetoConhecimento !== "-") conteudoSet.add(item.objetoConhecimento);
+      extrairItensMultiplos(item.objetoConhecimento).forEach(obj => conteudoSet.add(obj));
     } else {
-      if (item.conteudosRelacionados && item.conteudosRelacionados !== "-") conteudoSet.add(item.conteudosRelacionados);
+      extrairItensMultiplos(item.conteudosRelacionados).forEach(cont => conteudoSet.add(cont));
     }
   });
 
@@ -165,12 +169,48 @@ const formatarData = (dataBase) => {
   return `${dia}/${mes}/${ano}`;
 };
 
+// -------------------------------------------------------------
+// FUNÇÕES DE INTELIGÊNCIA ARTIFICIAL (AGORA LÊ OS RECURSOS!)
+// -------------------------------------------------------------
+function abrirIA(tipo) {
+  const componente = document.getElementById('componente').value || "minha disciplina";
+  const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
+  const anoEscolaridade = turmasMarcadas.length > 0 ? turmasMarcadas[0].split('º')[0] + "º Ano" : "minha turma";
+  
+  const habRadios = document.querySelector('input[name="radioHabPriorizada"]:checked');
+  const habSelecionada = habRadios ? habRadios.value : "uma habilidade da BNCC/Currículo";
+  
+  // Captura as metodologias selecionadas nas caixas!
+  const recursosSelecionados = Array.from(document.querySelectorAll('input[name="chk_recursos"]:checked')).map(c => c.value).join(", ");
+  
+  let promptMestre = `Atue como um professor especialista de ${componente}. Crie o passo a passo (desenvolvimento) de uma aula para alunos do ${anoEscolaridade}. O planejamento deve ser focado na seguinte habilidade: "${habSelecionada}". `;
+  
+  if (recursosSelecionados) {
+    promptMestre += `Para esta aula, planeio utilizar especificamente as seguintes ferramentas e metodologias: ${recursosSelecionados}. Integra estes elementos de forma criativa na aula. `;
+  }
+
+  promptMestre += `O texto gerado deve ser direto, prático e detalhar o tempo (em minutos) e as ações exatas do professor e dos alunos.`;
+  
+  navigator.clipboard.writeText(promptMestre).then(() => {
+    alert("✅ Comando Inteligente copiado com sucesso!\n\nEle inclui a sua Habilidade e os Recursos que selecionou.\n\nCole o texto (Ctrl+V ou botão direito -> Colar) na página da Inteligência Artificial que vai abrir agora.");
+    if (tipo === 'gemini') window.open('https://gemini.google.com/app', '_blank');
+    else if (tipo === 'chatgpt') window.open('https://chatgpt.com', '_blank');
+  }).catch(err => {
+    alert("⚠️ O seu navegador bloqueou a cópia automática. A janela da Inteligência Artificial será aberta mesmo assim.");
+    if (tipo === 'gemini') window.open('https://gemini.google.com/app', '_blank');
+    else if (tipo === 'chatgpt') window.open('https://chatgpt.com', '_blank');
+  });
+}
+
+// -------------------------------------------------------------
+// GERAÇÃO DO PLANO DE AULA
+// -------------------------------------------------------------
 async function enviarPlanoAulaAPI() {
   const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
   if(turmasMarcadas.length === 0) { alert("⚠️ Selecione pelo menos uma Turma marcando a caixinha."); return; }
 
   const btn = document.getElementById('btnGerar');
-  btn.innerText = "⏳ A Gerar Documento Oficial...";
+  btn.innerText = "⏳ A Gerar Documentos Oficiais...";
   btn.disabled = true;
 
   const habPri = document.querySelector('input[name="radioHabPriorizada"]:checked');
@@ -184,7 +224,6 @@ async function enviarPlanoAulaAPI() {
   const objs = Array.from(document.querySelectorAll('input[name="chkObjeto"]:checked')).map(c => c.value).join(" | ");
   const recursos = Array.from(document.querySelectorAll('input[name="chk_recursos"]:checked')).map(c => c.value).join(", ");
   
-  // PARÂMETRO DOS ANEXOS
   const gerarAnexos = document.getElementById('chkGerarAnexos') ? document.getElementById('chkGerarAnexos').checked : false;
 
   const turmaInteira = turmasMarcadas.join(" e ");
@@ -215,7 +254,7 @@ async function enviarPlanoAulaAPI() {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "gerarPlano", planoData: dadosPlano }) });
     const r = await res.json();
     if (r.status === "sucesso") {
-      alert("✅ Plano gerado com sucesso!");
+      alert("✅ Plano Oficial e Anexos gerados com sucesso!");
       window.open(r.url, '_blank');
       mudarAba('meusPlanos', null);
     } else { alert("Erro: " + r.mensagem); }
@@ -223,60 +262,66 @@ async function enviarPlanoAulaAPI() {
   finally { btn.innerText = "🚀 Gerar Plano Oficial & Enviar para Supervisão"; btn.disabled = false; }
 }
 
+// -------------------------------------------------------------
+// MEUS PLANOS COM BOTÃO DE QR DO CADERNO INCLUÍDO E NOMES CORRETOS
+// -------------------------------------------------------------
 async function carregarMeusPlanos() {
   const container = document.getElementById('listaDePlanos');
-  container.innerHTML = "⏳ A carregar os seus planos...";
+  container.innerHTML = "⏳ A carregar os seus planos recentes...";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarSupervisao" }) });
     const r = await res.json();
     if (r.status === "sucesso" && r.registros) {
       const meus = r.registros.filter(i => i.professor.toLowerCase() === professorLogado.toLowerCase());
-      if (!meus.length) return container.innerHTML = "<p>Nenhum plano gerado.</p>";
+      if (!meus.length) return container.innerHTML = "<p>Ainda não gerou nenhum plano.</p>";
       let html = "";
       meus.reverse().forEach(p => {
-        // Verifica se existe link do Caderno
-        let botaoCaderno = p.cadernoUrl ? `<a href="${p.cadernoUrl}" target="_blank" style="flex:1; text-align:center; background:#f1f5f9; color:#475569; padding:10px 12px; text-decoration:none; border-radius:8px; font-weight:bold; border:1px solid #cbd5e1; font-size:0.85rem;">📑 Ver Anexos</a>` : '';
+        
+        // SE EXISTIR CADERNO DE ANEXOS, CRIA OS DOIS BOTÕES
+        let botoesCaderno = p.cadernoUrl ? `
+          <a href="${p.cadernoUrl}" target="_blank" style="flex:1; text-align:center; background:#f1f5f9; color:#475569; padding:10px 12px; text-decoration:none; border-radius:8px; font-weight:bold; border:1px solid #cbd5e1; font-size:0.85rem; min-width:110px;">📑 Abrir Caderno de Anexos</a>
+          <button onclick="abrirModalQR('${p.cadernoUrl}', '📱 QR Code: Caderno de Anexos')" style="flex:1; background:#8b5cf6; color:white; border:none; padding:10px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; min-width:110px;">📱 QR Anexos</button>
+        ` : '';
 
         html += `<div class="plano-item">
-                  <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 5px;"><strong>📅 ${p.data}</strong> | Status: ${p.status}</div>
+                  <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 5px;"><strong>📅 ${p.data}</strong> | Estado: ${p.status}</div>
                   <div style="font-size: 1.05rem; color: #0f172a; font-weight: bold; margin-bottom: 5px;">📚 ${p.componente}</div>
                   <div style="font-size: 0.9rem; color: #334155; margin-bottom: 15px;"><strong>🏷️ Turmas:</strong> ${p.turma}</div>
                   
-                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <a href="${p.docUrl}" target="_blank" style="flex:1; text-align:center; background:#2563eb; color:white; padding:10px 12px; text-decoration:none; border-radius:8px; font-weight:bold; font-size:0.85rem; min-width: 120px;">📄 Abrir Plano</a>
-                    ${botaoCaderno}
-                    <button onclick="abrirModalQR('${p.pastaUrl}')" style="flex:1; background:#10b981; color:white; border:none; padding:10px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; min-width: 120px;">📷 QR Evidências</button>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: stretch;">
+                    <a href="${p.docUrl}" target="_blank" style="flex:1; text-align:center; background:#2563eb; color:white; padding:10px 12px; text-decoration:none; border-radius:8px; font-weight:bold; font-size:0.85rem; min-width:110px;">📄 Abrir Plano</a>
+                    <button onclick="abrirModalQR('${p.pastaUrl}', '📷 QR Code: Pasta de Evidências')" style="flex:1; background:#10b981; color:white; border:none; padding:10px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; min-width:110px;">📷 QR Evidências</button>
+                    ${botoesCaderno}
                   </div>
                  </div>`;
       });
       container.innerHTML = html;
     }
-  } catch (e) { container.innerHTML = "<p>Erro ao carregar lista.</p>"; }
+  } catch (e) { container.innerHTML = "<p>Erro ao carregar a lista.</p>"; }
 }
 
-function abrirModalQR(url) { document.getElementById('imgQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`; document.getElementById('modalQR').style.display = 'flex'; }
+// MODAL INTELIGENTE (AGORA RECEBE TÍTULO PARA DIFERENCIAR OS QRs)
+function abrirModalQR(url, tituloModal) { 
+  let modal = document.getElementById('modalQR');
+  
+  // Cria o texto do título acima do QR Code se não existir
+  let tituloExistente = document.getElementById('textoModalQR');
+  if(!tituloExistente) {
+    let txt = document.createElement('h3');
+    txt.id = 'textoModalQR';
+    txt.style.color = '#f8fafc';
+    txt.style.marginBottom = '20px';
+    txt.style.textAlign = 'center';
+    txt.style.padding = '0 20px';
+    document.getElementById('imgQRCode').before(txt);
+  }
+  
+  // Atualiza o texto e a imagem
+  document.getElementById('textoModalQR').innerText = tituloModal || "Aponte a câmera do celular";
+  document.getElementById('imgQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`; 
+  modal.style.display = 'flex'; 
+}
+
 function fecharModalQR() { document.getElementById('modalQR').style.display = 'none'; }
-
-// FUNÇÕES DE INTELIGÊNCIA ARTIFICIAL
-function abrirIA(tipo) {
-  const componente = document.getElementById('componente').value || "minha disciplina";
-  const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
-  const anoEscolaridade = turmasMarcadas.length > 0 ? turmasMarcadas[0].split('º')[0] + "º Ano" : "minha turma";
-  
-  const habRadios = document.querySelector('input[name="radioHabPriorizada"]:checked');
-  const habSelecionada = habRadios ? habRadios.value : "uma habilidade específica da matriz";
-  
-  const promptMestre = `Atue como um professor especialista de ${componente}. Crie o passo a passo (desenvolvimento) de uma aula para alunos do ${anoEscolaridade}. O planejamento deve ser focado na seguinte habilidade: "${habSelecionada}". O texto deve ser direto, prático e detalhar exatamente as ações do professor e dos alunos.`;
-  
-  navigator.clipboard.writeText(promptMestre).then(() => {
-    alert("✅ Comando Mestre copiado com sucesso!\n\nCole o texto (Ctrl+V) na página da Inteligência Artificial que vai abrir agora.");
-    if (tipo === 'gemini') window.open('https://gemini.google.com/app', '_blank');
-    else if (tipo === 'chatgpt') window.open('https://chatgpt.com', '_blank');
-  }).catch(err => {
-    alert("⚠️ O seu navegador bloqueou a cópia automática. A janela da Inteligência Artificial será aberta mesmo assim.");
-    if (tipo === 'gemini') window.open('https://gemini.google.com/app', '_blank');
-    else if (tipo === 'chatgpt') window.open('https://chatgpt.com', '_blank');
-  });
-}
 
 document.addEventListener("DOMContentLoaded", () => { const btn = document.getElementById('btnGerar'); if(btn) btn.onclick = enviarPlanoAulaAPI; });
