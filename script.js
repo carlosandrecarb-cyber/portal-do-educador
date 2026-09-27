@@ -1,4 +1,4 @@
-const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
+const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec"; // 🔴 Substitua pelo link do seu Web App (Codigo.gs)
 var professorLogado = "";
 var dadosMatrizGlobal = [];
 
@@ -234,8 +234,20 @@ async function carregarMeusPlanos() {
       if (!meus.length) return container.innerHTML = "<p>Nenhum plano gerado.</p>";
       let html = "";
       meus.reverse().forEach(p => {
-        html += `<div class="plano-item"><strong>📅 Data:</strong> ${p.data} | <strong>📚 Disciplina:</strong> ${p.componente} <br><strong>🏷️ Turmas:</strong> ${p.turma}<br><br>
-        <a href="${p.docUrl}" target="_blank" style="background:#2563eb; color:white; padding:6px 12px; text-decoration:none; border-radius:6px; font-weight:bold;">📄 Abrir Google Doc</a> <button onclick="abrirModalQR('${p.pastaUrl}')">📱 Enviar Evidências (QR)</button></div>`;
+        // Verifica se existe link do Caderno
+        let botaoCaderno = p.cadernoUrl ? `<a href="${p.cadernoUrl}" target="_blank" style="flex:1; text-align:center; background:#f1f5f9; color:#475569; padding:10px 12px; text-decoration:none; border-radius:8px; font-weight:bold; border:1px solid #cbd5e1; font-size:0.85rem;">📑 Ver Anexos</a>` : '';
+
+        html += `<div class="plano-item">
+                  <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 5px;"><strong>📅 ${p.data}</strong> | Status: ${p.status}</div>
+                  <div style="font-size: 1.05rem; color: #0f172a; font-weight: bold; margin-bottom: 5px;">📚 ${p.componente}</div>
+                  <div style="font-size: 0.9rem; color: #334155; margin-bottom: 15px;"><strong>🏷️ Turmas:</strong> ${p.turma}</div>
+                  
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a href="${p.docUrl}" target="_blank" style="flex:1; text-align:center; background:#2563eb; color:white; padding:10px 12px; text-decoration:none; border-radius:8px; font-weight:bold; font-size:0.85rem; min-width: 120px;">📄 Abrir Plano</a>
+                    ${botaoCaderno}
+                    <button onclick="abrirModalQR('${p.pastaUrl}')" style="flex:1; background:#10b981; color:white; border:none; padding:10px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; min-width: 120px;">📷 QR Evidências</button>
+                  </div>
+                 </div>`;
       });
       container.innerHTML = html;
     }
