@@ -37,23 +37,34 @@ async function fazerLogin() {
       document.getElementById('infoUsuarioBoasVindas').style.display = 'inline-block';
       document.getElementById('infoUsuarioBoasVindas').innerText = `👋 Docente: ${r.nome}`;
       
-      // Passa as disciplinas e turmas diretas do Banco de Dados para a interface
+      // MOSTRA O BOTÃO SAIR APÓS O LOGIN
+      document.getElementById('btnSairSistema').style.display = 'block';
+      
       carregarComponentesProfessor(r.componentes, r.turmas);
     } else { msg.innerText = r.mensagem || "Erro de login."; }
   } catch (e) { msg.innerText = "⚠️ Erro de conexão com o servidor."; }
+}
+
+// FUNÇÃO SAIR DO SISTEMA
+function sairDoSistema() {
+  professorLogado = "";
+  document.getElementById('loginSenha').value = ""; 
+  document.getElementById('telaLogin').style.display = 'flex';
+  document.getElementById('infoUsuarioBoasVindas').style.display = 'none';
+  document.getElementById('btnSairSistema').style.display = 'none';
+  document.getElementById('nomeProfessor').value = "";
+  mudarAba('gerarPlano', document.querySelector('.tabs button')); 
 }
 
 function carregarComponentesProfessor(componentesLista, turmasLista) {
   const selComp = document.getElementById('componente');
   const areaTurmas = document.getElementById('areaTurmas');
 
-  // Disciplina Única (dropdown)
   let htmlComp = '<option value="">Selecione a disciplina...</option>';
   const compArray = (componentesLista?.length && componentesLista[0] !== "") ? componentesLista : ["Matemática", "Língua Portuguesa", "Geografia", "História", "Ciências", "Arte", "Educação Física", "Ensino Religioso", "Língua Inglesa"];
   compArray.forEach(c => htmlComp += `<option value="${c}">${c}</option>`);
   selComp.innerHTML = htmlComp;
 
-  // Turmas Múltiplas (Checkboxes em vez de dropdown)
   let htmlTurma = '';
   const turmasArray = (turmasLista?.length && turmasLista[0] !== "") ? turmasLista : ["6º Ano", "7º Ano", "8º Ano", "9º Ano"];
   turmasArray.forEach(t => {
@@ -67,7 +78,6 @@ function carregarComponentesProfessor(componentesLista, turmasLista) {
 
 async function buscarMatriz() {
   const componente = document.getElementById('componente').value;
-  // Captura todas as turmas que o professor marcou o "check"
   const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
   const trimestre = document.getElementById('selTrimestre') ? document.getElementById('selTrimestre').value : "3º Trimestre";
   
@@ -76,7 +86,6 @@ async function buscarMatriz() {
     return;
   }
   
-  // Usa o ano da *primeira turma marcada* para procurar a matriz
   const anoBaseParaBusca = turmasMarcadas[0]; 
   
   document.getElementById('unidade').innerHTML = '<option value="">⏳ Buscando matriz...</option>';
@@ -175,7 +184,9 @@ async function enviarPlanoAulaAPI() {
   const objs = Array.from(document.querySelectorAll('input[name="chkObjeto"]:checked')).map(c => c.value).join(" | ");
   const recursos = Array.from(document.querySelectorAll('input[name="chk_recursos"]:checked')).map(c => c.value).join(", ");
   
-  // Une todas as turmas (Ex: "6º Ano A e 6º Ano B")
+  // PARÂMETRO DOS ANEXOS
+  const gerarAnexos = document.getElementById('chkGerarAnexos') ? document.getElementById('chkGerarAnexos').checked : false;
+
   const turmaInteira = turmasMarcadas.join(" e ");
   const anoEscolaridade = turmasMarcadas[0].split('º')[0] + "º Ano"; 
 
@@ -196,7 +207,8 @@ async function enviarPlanoAulaAPI() {
     objetoConhecimento: objs || "-",
     desenvolvimento: document.getElementById('desenvolvimento').value,
     recursos: recursos || "-",
-    evidencias: evidenciasMatriz
+    evidencias: evidenciasMatriz,
+    gerarAnexos: gerarAnexos
   };
 
   try {
@@ -232,4 +244,27 @@ async function carregarMeusPlanos() {
 
 function abrirModalQR(url) { document.getElementById('imgQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`; document.getElementById('modalQR').style.display = 'flex'; }
 function fecharModalQR() { document.getElementById('modalQR').style.display = 'none'; }
+
+// FUNÇÕES DE INTELIGÊNCIA ARTIFICIAL
+function abrirIA(tipo) {
+  const componente = document.getElementById('componente').value || "minha disciplina";
+  const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
+  const anoEscolaridade = turmasMarcadas.length > 0 ? turmasMarcadas[0].split('º')[0] + "º Ano" : "minha turma";
+  
+  const habRadios = document.querySelector('input[name="radioHabPriorizada"]:checked');
+  const habSelecionada = habRadios ? habRadios.value : "uma habilidade específica da matriz";
+  
+  const promptMestre = `Atue como um professor especialista de ${componente}. Crie o passo a passo (desenvolvimento) de uma aula para alunos do ${anoEscolaridade}. O planejamento deve ser focado na seguinte habilidade: "${habSelecionada}". O texto deve ser direto, prático e detalhar exatamente as ações do professor e dos alunos.`;
+  
+  navigator.clipboard.writeText(promptMestre).then(() => {
+    alert("✅ Comando Mestre copiado com sucesso!\n\nCole o texto (Ctrl+V) na página da Inteligência Artificial que vai abrir agora.");
+    if (tipo === 'gemini') window.open('https://gemini.google.com/app', '_blank');
+    else if (tipo === 'chatgpt') window.open('https://chatgpt.com', '_blank');
+  }).catch(err => {
+    alert("⚠️ O seu navegador bloqueou a cópia automática. A janela da Inteligência Artificial será aberta mesmo assim.");
+    if (tipo === 'gemini') window.open('https://gemini.google.com/app', '_blank');
+    else if (tipo === 'chatgpt') window.open('https://chatgpt.com', '_blank');
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => { const btn = document.getElementById('btnGerar'); if(btn) btn.onclick = enviarPlanoAulaAPI; });
