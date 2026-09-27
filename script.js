@@ -165,12 +165,6 @@ const formatarData = (dataBase) => {
   return `${dia}/${mes}/${ano}`;
 };
 
-// EDITOR DE TEXTO RICO 
-function formatarTexto(comando) {
-  document.execCommand(comando, false, null);
-  document.getElementById('desenvolvimento').focus();
-}
-
 function abrirIA(tipo) {
   const componente = document.getElementById('componente').value || "minha disciplina";
   const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
@@ -197,7 +191,7 @@ function abrirIA(tipo) {
 }
 
 // -------------------------------------------------------------
-// GERAÇÃO DO PLANO DE AULA (Apanha o innerHTML do ContentEditable)
+// GERAÇÃO DO PLANO DE AULA
 // -------------------------------------------------------------
 async function enviarPlanoAulaAPI() {
   const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
@@ -259,6 +253,9 @@ async function enviarPlanoAulaAPI() {
   finally { btn.innerText = "🚀 Gerar Plano Oficial & Enviar para Supervisão"; btn.disabled = false; }
 }
 
+// -------------------------------------------------------------
+// MEUS PLANOS (COM CORREÇÃO DO FEEDBACK VAZIO)
+// -------------------------------------------------------------
 async function carregarMeusPlanos() {
   const container = document.getElementById('listaDePlanos');
   container.innerHTML = "⏳ A carregar os seus planos recentes...";
@@ -276,11 +273,21 @@ async function carregarMeusPlanos() {
           <button onclick="abrirModalQR('${p.cadernoUrl}', '📱 QR Code: Caderno de Anexos')" style="flex:1; background:#8b5cf6; color:white; border:none; padding:10px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; min-width:110px;">📱 QR Anexos</button>
         ` : '';
 
+        // SÓ MOSTRA O FEEDBACK SE O STATUS FOR "Devolvido p/ Ajuste" E HOUVER TEXTO
+        let feedbackHTML = "";
+        if (p.status.includes('Devolvido') && p.feedback && p.feedback.trim() !== "") {
+           feedbackHTML = `<div style="background:#fee2e2; color:#991b1b; padding:8px; border-radius:6px; font-size:0.85rem; margin-bottom:15px; border-left: 4px solid #ef4444;">💬 <strong>Motivo da Devolução:</strong> ${p.feedback}</div>`;
+        }
+
+        let corStatus = p.status.includes('Aprovado') ? '#10b981' : (p.status.includes('Devolvido') ? '#ef4444' : '#f59e0b');
+
         html += `<div class="plano-item">
-                  <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 5px;"><strong>📅 ${p.data}</strong> | Estado: ${p.status}</div>
+                  <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 5px;"><strong>📅 ${p.data}</strong> | Estado: <span style="color:${corStatus}; font-weight:bold;">${p.status}</span></div>
                   <div style="font-size: 1.05rem; color: #0f172a; font-weight: bold; margin-bottom: 5px;">📚 ${p.componente}</div>
                   <div style="font-size: 0.9rem; color: #334155; margin-bottom: 15px;"><strong>🏷️ Turmas:</strong> ${p.turma}</div>
                   
+                  ${feedbackHTML}
+
                   <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: stretch;">
                     <a href="${p.docUrl}" target="_blank" style="flex:1; text-align:center; background:#2563eb; color:white; padding:10px 12px; text-decoration:none; border-radius:8px; font-weight:bold; font-size:0.85rem; min-width:110px;">📄 Abrir Plano</a>
                     <button onclick="abrirModalQR('${p.pastaUrl}', '📷 QR Code: Pasta de Evidências')" style="flex:1; background:#10b981; color:white; border:none; padding:10px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; min-width:110px;">📷 QR Evidências</button>
