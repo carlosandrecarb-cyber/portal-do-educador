@@ -1,4 +1,6 @@
-const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec"; // 🔴 Substitua pela URL do seu Web App
+// [ 🔴 ATENÇÃO: COLOQUE AQUI O SEU LINK DO APPS SCRIPT GERADO NO PASSO 3 ]
+const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec"; 
+
 var professorLogado = "";
 var dadosMatrizGlobal = [];
 
@@ -16,9 +18,7 @@ function verificarEscolaManual() {
   if (codigo.length > 1) {
     document.getElementById('telaWorkspace').style.display = 'none';
     document.getElementById('telaLogin').style.display = 'flex';
-    document.getElementById('tituloNomeEscola').innerText = "Escola Mestra Aurora";
-    document.getElementById('logoLogin').src = "https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5";
-    document.getElementById('logoHeader').src = "https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5";
+    document.getElementById('tituloNomeEscola').innerText = "Acesso Autorizado";
   } else { document.getElementById('msgWorkspace').innerText = "Código não reconhecido."; }
 }
 
@@ -36,7 +36,6 @@ async function fazerLogin() {
       document.getElementById('nomeProfessor').value = r.nome;
       document.getElementById('infoUsuarioBoasVindas').style.display = 'inline-block';
       document.getElementById('infoUsuarioBoasVindas').innerText = `👋 Docente: ${r.nome}`;
-      
       document.getElementById('btnSairSistema').style.display = 'block';
       carregarComponentesProfessor(r.componentes, r.turmas);
     } else { msg.innerText = r.mensagem || "Erro de login."; }
@@ -84,7 +83,6 @@ async function buscarMatriz() {
   }
   
   const anoBaseParaBusca = turmasMarcadas[0]; 
-  
   document.getElementById('unidade').innerHTML = '<option value="">⏳ Buscando matriz...</option>';
   document.getElementById('blocoCurriculo').style.display = 'block';
 
@@ -113,7 +111,6 @@ function montarCheckboxes() {
   let mostrarRecSup = false;
   let mostrarSocioemocional = false;
 
-  // EXTRAÇÃO DOS OBJETOS DE FORMA INTELIGENTE (Split por vírgula, linha ou barra)
   const extrairItensMultiplos = (textoBruto) => {
     if (!textoBruto || textoBruto === "-") return [];
     let partes = textoBruto.split(/\n|\s+\|\s+|(?:,(?![^\(]*\)))/);
@@ -155,7 +152,6 @@ function montarCheckboxes() {
   } else if (mostrarSocioemocional) {
     painelHabilidades += `${htmlRec ? `<label style="font-weight:700; color:#d97706; margin-top:10px;">Habilidades Socioemocionais:</label>${htmlRec}` : ''}`;
   }
-
   document.getElementById('listaHabilidades').innerHTML = painelHabilidades;
 
   let htmlObj = `<label style="font-weight:700; color:#0284c7; display:block; margin-bottom:8px;">${tituloConteudo}</label>`;
@@ -169,9 +165,12 @@ const formatarData = (dataBase) => {
   return `${dia}/${mes}/${ano}`;
 };
 
-// -------------------------------------------------------------
-// FUNÇÕES DE INTELIGÊNCIA ARTIFICIAL (AGORA LÊ OS RECURSOS!)
-// -------------------------------------------------------------
+// EDITOR DE TEXTO RICO 
+function formatarTexto(comando) {
+  document.execCommand(comando, false, null);
+  document.getElementById('desenvolvimento').focus();
+}
+
 function abrirIA(tipo) {
   const componente = document.getElementById('componente').value || "minha disciplina";
   const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
@@ -180,30 +179,25 @@ function abrirIA(tipo) {
   const habRadios = document.querySelector('input[name="radioHabPriorizada"]:checked');
   const habSelecionada = habRadios ? habRadios.value : "uma habilidade da BNCC/Currículo";
   
-  // Captura as metodologias selecionadas nas caixas!
   const recursosSelecionados = Array.from(document.querySelectorAll('input[name="chk_recursos"]:checked')).map(c => c.value).join(", ");
   
   let promptMestre = `Atue como um professor especialista de ${componente}. Crie o passo a passo (desenvolvimento) de uma aula para alunos do ${anoEscolaridade}. O planejamento deve ser focado na seguinte habilidade: "${habSelecionada}". `;
-  
-  if (recursosSelecionados) {
-    promptMestre += `Para esta aula, planeio utilizar especificamente as seguintes ferramentas e metodologias: ${recursosSelecionados}. Integra estes elementos de forma criativa na aula. `;
-  }
-
+  if (recursosSelecionados) { promptMestre += `Para esta aula, planeio utilizar especificamente as seguintes ferramentas e metodologias: ${recursosSelecionados}. Integra estes elementos de forma criativa na aula. `; }
   promptMestre += `O texto gerado deve ser direto, prático e detalhar o tempo (em minutos) e as ações exatas do professor e dos alunos.`;
   
   navigator.clipboard.writeText(promptMestre).then(() => {
-    alert("✅ Comando Inteligente copiado com sucesso!\n\nEle inclui a sua Habilidade e os Recursos que selecionou.\n\nCole o texto (Ctrl+V ou botão direito -> Colar) na página da Inteligência Artificial que vai abrir agora.");
+    alert("✅ Comando Inteligente copiado com sucesso!\n\nCole o texto na página da Inteligência Artificial que vai abrir agora.");
     if (tipo === 'gemini') window.open('https://gemini.google.com/app', '_blank');
     else if (tipo === 'chatgpt') window.open('https://chatgpt.com', '_blank');
   }).catch(err => {
-    alert("⚠️ O seu navegador bloqueou a cópia automática. A janela da Inteligência Artificial será aberta mesmo assim.");
+    alert("⚠️ O seu navegador bloqueou a cópia automática. A janela será aberta mesmo assim.");
     if (tipo === 'gemini') window.open('https://gemini.google.com/app', '_blank');
     else if (tipo === 'chatgpt') window.open('https://chatgpt.com', '_blank');
   });
 }
 
 // -------------------------------------------------------------
-// GERAÇÃO DO PLANO DE AULA
+// GERAÇÃO DO PLANO DE AULA (Apanha o innerHTML do ContentEditable)
 // -------------------------------------------------------------
 async function enviarPlanoAulaAPI() {
   const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
@@ -229,6 +223,9 @@ async function enviarPlanoAulaAPI() {
   const turmaInteira = turmasMarcadas.join(" e ");
   const anoEscolaridade = turmasMarcadas[0].split('º')[0] + "º Ano"; 
 
+  // CAPTURA O HTML (As quebras de linha)
+  const textoDesenvolvimento = document.getElementById('desenvolvimento').innerHTML;
+
   const dadosPlano = {
     professor: document.getElementById('nomeProfessor').value,
     tipoPlano: document.getElementById('tipoPlano').value,
@@ -244,7 +241,7 @@ async function enviarPlanoAulaAPI() {
     habRecomposicao: rec,
     habSuporte: sup,
     objetoConhecimento: objs || "-",
-    desenvolvimento: document.getElementById('desenvolvimento').value,
+    desenvolvimento: textoDesenvolvimento, 
     recursos: recursos || "-",
     evidencias: evidenciasMatriz,
     gerarAnexos: gerarAnexos
@@ -262,9 +259,6 @@ async function enviarPlanoAulaAPI() {
   finally { btn.innerText = "🚀 Gerar Plano Oficial & Enviar para Supervisão"; btn.disabled = false; }
 }
 
-// -------------------------------------------------------------
-// MEUS PLANOS COM BOTÃO DE QR DO CADERNO INCLUÍDO E NOMES CORRETOS
-// -------------------------------------------------------------
 async function carregarMeusPlanos() {
   const container = document.getElementById('listaDePlanos');
   container.innerHTML = "⏳ A carregar os seus planos recentes...";
@@ -277,7 +271,6 @@ async function carregarMeusPlanos() {
       let html = "";
       meus.reverse().forEach(p => {
         
-        // SE EXISTIR CADERNO DE ANEXOS, CRIA OS DOIS BOTÕES
         let botoesCaderno = p.cadernoUrl ? `
           <a href="${p.cadernoUrl}" target="_blank" style="flex:1; text-align:center; background:#f1f5f9; color:#475569; padding:10px 12px; text-decoration:none; border-radius:8px; font-weight:bold; border:1px solid #cbd5e1; font-size:0.85rem; min-width:110px;">📑 Abrir Caderno de Anexos</a>
           <button onclick="abrirModalQR('${p.cadernoUrl}', '📱 QR Code: Caderno de Anexos')" style="flex:1; background:#8b5cf6; color:white; border:none; padding:10px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; min-width:110px;">📱 QR Anexos</button>
@@ -300,23 +293,13 @@ async function carregarMeusPlanos() {
   } catch (e) { container.innerHTML = "<p>Erro ao carregar a lista.</p>"; }
 }
 
-// MODAL INTELIGENTE (AGORA RECEBE TÍTULO PARA DIFERENCIAR OS QRs)
 function abrirModalQR(url, tituloModal) { 
   let modal = document.getElementById('modalQR');
-  
-  // Cria o texto do título acima do QR Code se não existir
   let tituloExistente = document.getElementById('textoModalQR');
   if(!tituloExistente) {
-    let txt = document.createElement('h3');
-    txt.id = 'textoModalQR';
-    txt.style.color = '#f8fafc';
-    txt.style.marginBottom = '20px';
-    txt.style.textAlign = 'center';
-    txt.style.padding = '0 20px';
+    let txt = document.createElement('h3'); txt.id = 'textoModalQR'; txt.style.color = '#f8fafc'; txt.style.marginBottom = '20px'; txt.style.textAlign = 'center'; txt.style.padding = '0 20px';
     document.getElementById('imgQRCode').before(txt);
   }
-  
-  // Atualiza o texto e a imagem
   document.getElementById('textoModalQR').innerText = tituloModal || "Aponte a câmera do celular";
   document.getElementById('imgQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`; 
   modal.style.display = 'flex'; 
