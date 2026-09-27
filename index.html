@@ -7,17 +7,10 @@
   <style>
     :root { --cor-principal: #2c3e50; --cor-secundaria: #27ae60; --cor-fundo: #f8f9fa; --sombra-suave: 0 8px 30px rgba(0,0,0,0.08); }
     body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: var(--cor-fundo); margin: 0; padding: 0; color: #2d3748; }
-    
-    header { background: linear-gradient(135deg, var(--cor-principal), #1a252f); color: white; padding: 25px 20px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; position: relative; }
+    header { background: linear-gradient(135deg, var(--cor-principal), #1a252f); color: white; padding: 25px 20px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; position: relative;}
     header h2 { margin: 10px 0 5px 0; font-size: 1.6rem; font-weight: 700; }
     header p { margin: 0; font-size: 0.95rem; color: #e2e8f0; }
-    
     .logo-escola { max-width: 90%; height: auto; max-height: 90px; object-fit: contain; border-radius: 12px; background: white; padding: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    
-    /* BOTÃO SAIR ADICIONADO AQUI */
-    .btn-sair { position: absolute; top: 20px; right: 20px; background: #e74c3c; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; display: none; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    .btn-sair:hover { background: #c0392b; transform: translateY(-2px); }
-
     .container { max-width: 900px; margin: 30px auto; background: white; padding: 35px; border-radius: 18px; box-shadow: var(--sombra-suave); border: 1px solid #edf2f7; }
     .tabs { display: flex; gap: 12px; margin-bottom: 25px; background: #edf2f7; padding: 6px; border-radius: 14px; }
     .tab-btn { flex: 1; padding: 14px; border: none; background: transparent; font-weight: 600; font-size: 1rem; color: #4a5568; cursor: pointer; transition: all 0.3s ease; border-radius: 10px; text-align: center; }
@@ -30,7 +23,7 @@
     .bloco-campo label { display: block; font-weight: 600; margin-bottom: 8px; color: #4a5568; font-size: 0.95rem; }
     .bloco-campo input[type="text"], .bloco-campo input[type="number"], .bloco-campo select, .bloco-campo textarea, input[type="date"] { width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 12px; box-sizing: border-box; font-family: inherit; font-size: 1rem; transition: all 0.2s; background: #fdfdfd; }
     .bloco-campo input:focus, .bloco-campo select:focus, .bloco-campo textarea:focus { border-color: var(--cor-secundaria); outline: none; background: white; box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.1); }
-    .bloco-campo textarea { resize: vertical; min-height: 110px; }
+    .bloco-campo textarea { resize: vertical; min-height: 140px; }
     .btn-gerar { background: linear-gradient(135deg, var(--cor-secundaria), #219653); color: white; padding: 16px 24px; border: none; border-radius: 14px; cursor: pointer; font-size: 1.1rem; font-weight: 700; width: 100%; transition: all 0.3s ease; margin-top: 25px; box-shadow: 0 6px 20px rgba(39, 174, 96, 0.3); }
     .btn-gerar:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(39, 174, 96, 0.4); filter: brightness(1.05); }
     .checkbox-item { margin-bottom: 10px; display: flex; align-items: flex-start; background: #f8fafc; padding: 10px 14px; border-radius: 10px; border: 1px solid #edf2f7; transition: background 0.2s; }
@@ -57,6 +50,8 @@
     #modalQR { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); backdrop-filter: blur(5px); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
     #imgQRCode { background: white; padding: 20px; border-radius: 16px; max-width: 80%; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
     #btnFecharQR { margin-top: 20px; padding: 12px 24px; background: #e74c3c; color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .btn-sair { position: absolute; top: 20px; right: 20px; background: #e74c3c; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; display: none; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .btn-sair:hover { background: #c0392b; transform: translateY(-2px); }
   </style>
 </head>
 <body>
@@ -88,7 +83,6 @@
     <img id="logoHeader" src="" class="logo-escola">
     <h2>🎓 Portal do Educador</h2>
     <div id="infoUsuarioBoasVindas" style="margin-top: 15px; background: rgba(255,255,255,0.15); padding: 8px 20px; border-radius: 30px; font-size: 0.95rem; font-weight: 700; color: #fef08a; display: none; backdrop-filter: blur(5px);"></div>
-    <!-- BOTÃO SAIR -->
     <button id="btnSairSistema" class="btn-sair" onclick="sairDoSistema()">Sair 🚪</button>
   </header>
 
@@ -154,6 +148,8 @@
       </div>
 
       <div id="blocoCurriculo" style="display:none;">
+        
+        <!-- SEÇÃO 2: BASE CURRICULAR -->
         <h3>📚 2. Base Curricular</h3>
         <div class="bloco-campo">
           <label id="labelUnidadeDinamica">Unidade Temática (Eixo)</label>
@@ -169,27 +165,10 @@
             <div id="listaObjetos" style="background:#f0f9ff; padding:15px; border-radius:12px; border:1px solid #bae6fd; max-height:180px; overflow-y:auto;"></div>
           </div>
 
-          <h3>⚡ 3. Metodologia & Execução</h3>
+          <!-- SEÇÃO 3: RECURSOS E METODOLOGIAS -->
+          <h3>🛠️ 3. Recursos & Metodologias</h3>
           <div class="bloco-campo">
-            <label>Desenvolvimento da Aula (Descreva o passo a passo)</label>
-            <textarea id="desenvolvimento" placeholder="Cole aqui o texto da sua aula..."></textarea>
-            
-            <!-- BOTÕES MÁGICOS DE IA -->
-            <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
-              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button type="button" onclick="abrirIA('gemini')" style="flex: 1; min-width: 200px; background: linear-gradient(135deg, #1e3a8a, #8b5cf6); color: white; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1rem; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); transition: 0.2s;">
-                  ✨ Ideias com Gemini
-                </button>
-                <button type="button" onclick="abrirIA('chatgpt')" style="flex: 1; min-width: 200px; background: linear-gradient(135deg, #0f766e, #10b981); color: white; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); transition: 0.2s;">
-                  🤖 Ideias com ChatGPT
-                </button>
-              </div>
-              <p style="font-size: 0.85rem; color: #64748b; margin: 0; text-align: center;">Clique para copiar um comando ideal e abrir a sua IA preferida. Depois, cole o texto criado por ela na caixa acima.</p>
-            </div>
-          </div>
-          
-          <div class="bloco-campo">
-            <label style="margin-top: 30px; margin-bottom: 15px; font-size: 1.1rem;">🛠️ Recursos & Metodologias</label>
+            <label style="margin-bottom: 15px; font-size: 0.95rem; color:#64748b;">Selecione os recursos e práticas que pretende utilizar (a Inteligência Artificial vai ler as suas escolhas).</label>
             
             <details class="grupo-recursos">
               <summary>📚 Recursos Tradicionais</summary>
@@ -254,19 +233,6 @@
               </div>
             </details>
 
-            <details class="grupo-recursos">
-              <summary>🗂️ Recursos Prontos e Editáveis</summary>
-              <div class="grid-checkboxes">
-                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Planos de aula prontos"> Planos de aula prontos (BNCC)</label>
-                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Atividades imprimíveis por disciplina"> Atividades imprimíveis</label>
-                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Sequências didáticas adaptáveis"> Sequências didáticas adaptáveis</label>
-                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Slides prontos para apresentação"> Slides prontos</label>
-                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Modelos de provas e exercícios"> Modelos de provas</label>
-                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Fichas de leitura e interpretação"> Fichas de leitura e interpretação</label>
-                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Projetos interdisciplinares já estruturados"> Projetos interdisciplinares estruturados</label>
-              </div>
-            </details>
-
             <!-- METODOLOGIAS EM DESTAQUE E SEMPRE ABERTO -->
             <details class="grupo-recursos destaque-metodologia" open>
               <summary>📌 Metodologias Ativas</summary>
@@ -281,16 +247,33 @@
                 <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Design Thinking"> Design Thinking</label>
                 <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem Baseada em Investigação"> Aprendizagem Baseada em Investigação</label>
                 <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem Colaborativa"> Aprendizagem Colaborativa</label>
-                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem por Pares"> Aprendizagem por Pares</label>
-                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem Baseada em Competências"> Aprendizagem Baseada em Competências</label>
-                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem Experiencial"> Aprendizagem Experiencial</label>
-                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem Baseada em Desafios"> Aprendizagem Baseada em Desafios</label>
-                <label class="checkbox-item"><input type="checkbox" name="chk_recursos" value="Aprendizagem Maker"> Aprendizagem Maker</label>
               </div>
             </details>
-
           </div>
 
+          <!-- SEÇÃO 4: METODOLOGIA E IA -->
+          <h3>⚡ 4. Metodologia & Execução</h3>
+          <div class="bloco-campo">
+            
+            <!-- BOTÕES MÁGICOS DE IA -->
+            <div style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
+              <p style="font-size: 0.95rem; color: #4a5568; margin: 0 0 5px 0;"><strong>Precisa de inspiração?</strong> Clique num dos botões abaixo. O sistema vai copiar a sua disciplina, habilidade e recursos escolhidos, e abrirá a IA para planear a aula por si!</p>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" onclick="abrirIA('gemini')" style="flex: 1; min-width: 200px; background: linear-gradient(135deg, #1e3a8a, #8b5cf6); color: white; border: none; padding: 14px 18px; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.05rem; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); transition: 0.2s;">
+                  ✨ Criar Ideias com Gemini
+                </button>
+                <button type="button" onclick="abrirIA('chatgpt')" style="flex: 1; min-width: 200px; background: linear-gradient(135deg, #0f766e, #10b981); color: white; border: none; padding: 14px 18px; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.05rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); transition: 0.2s;">
+                  🤖 Criar Ideias com ChatGPT
+                </button>
+              </div>
+            </div>
+
+            <label>Desenvolvimento da Aula (Cole aqui o resultado da IA ou descreva o seu passo a passo)</label>
+            <textarea id="desenvolvimento" placeholder="Ex: 1. Acolhimento (10 min) - Iniciar a aula com uma questão disparadora..."></textarea>
+          </div>
+          
+          <!-- SEÇÃO 5: FINALIZAÇÃO -->
+          <h3>🏁 5. Finalização e Documentos</h3>
           <!-- CHECKBOX DO CADERNO DE ANEXOS -->
           <div style="background: #f1f5f9; padding: 15px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #cbd5e1; display: flex; align-items: center; gap: 10px;">
             <input type="checkbox" id="chkGerarAnexos" style="transform: scale(1.3); cursor: pointer;" checked>
