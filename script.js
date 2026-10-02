@@ -1,4 +1,4 @@
-// [ 🔴 ATENÇÃO: COLOQUE AQUI O SEU LINK DO APPS SCRIPT GERADO NO PASSO 3 ]
+// [ 🔴 ATENÇÃO: COLOQUE AQUI O SEU LINK DO APPS SCRIPT ]
 const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec"; 
 
 var professorLogado = "";
@@ -18,7 +18,9 @@ function verificarEscolaManual() {
   if (codigo.length > 1) {
     document.getElementById('telaWorkspace').style.display = 'none';
     document.getElementById('telaLogin').style.display = 'flex';
-    document.getElementById('tituloNomeEscola').innerText = "Acesso Autorizado";
+    document.getElementById('tituloNomeEscola').innerText = "Escola Mestra Aurora";
+    document.getElementById('logoLogin').src = "https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5";
+    document.getElementById('logoHeader').src = "https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5";
   } else { document.getElementById('msgWorkspace').innerText = "Código não reconhecido."; }
 }
 
@@ -36,6 +38,7 @@ async function fazerLogin() {
       document.getElementById('nomeProfessor').value = r.nome;
       document.getElementById('infoUsuarioBoasVindas').style.display = 'inline-block';
       document.getElementById('infoUsuarioBoasVindas').innerText = `👋 Docente: ${r.nome}`;
+      
       document.getElementById('btnSairSistema').style.display = 'block';
       carregarComponentesProfessor(r.componentes, r.turmas);
     } else { msg.innerText = r.mensagem || "Erro de login."; }
@@ -111,10 +114,12 @@ function montarCheckboxes() {
   let mostrarRecSup = false;
   let mostrarSocioemocional = false;
 
+  // ✨ CORREÇÃO APLICADA AQUI: A separação do Objeto do Conhecimento agora ignora vírgulas!
   const extrairItensMultiplos = (textoBruto) => {
     if (!textoBruto || textoBruto === "-") return [];
-    let partes = textoBruto.split(/\n|\s+\|\s+|(?:,(?![^\(]*\)))/);
-    return partes.map(p => p.replace(/^[\-\•\◦]\s*/, "").trim()).filter(p => p.length > 2);
+    // Separa apenas por quebra de linha (\n), ponto-e-vírgula (;) ou bullets (•, |)
+    let partes = textoBruto.split(/\n|;|•|\|/);
+    return partes.map(p => p.replace(/^[\-\◦]\s*/, "").trim()).filter(p => p.length > 2);
   };
 
   if (componente === "Língua Portuguesa" || componente === "Matemática") {
@@ -152,6 +157,7 @@ function montarCheckboxes() {
   } else if (mostrarSocioemocional) {
     painelHabilidades += `${htmlRec ? `<label style="font-weight:700; color:#d97706; margin-top:10px;">Habilidades Socioemocionais:</label>${htmlRec}` : ''}`;
   }
+
   document.getElementById('listaHabilidades').innerHTML = painelHabilidades;
 
   let htmlObj = `<label style="font-weight:700; color:#0284c7; display:block; margin-bottom:8px;">${tituloConteudo}</label>`;
@@ -164,6 +170,11 @@ const formatarData = (dataBase) => {
   const [ano, mes, dia] = dataBase.split('-');
   return `${dia}/${mes}/${ano}`;
 };
+
+function formatarTexto(comando) {
+  document.execCommand(comando, false, null);
+  document.getElementById('desenvolvimento').focus();
+}
 
 function abrirIA(tipo) {
   const componente = document.getElementById('componente').value || "minha disciplina";
@@ -217,7 +228,6 @@ async function enviarPlanoAulaAPI() {
   const turmaInteira = turmasMarcadas.join(" e ");
   const anoEscolaridade = turmasMarcadas[0].split('º')[0] + "º Ano"; 
 
-  // CAPTURA O HTML (As quebras de linha)
   const textoDesenvolvimento = document.getElementById('desenvolvimento').innerHTML;
 
   const dadosPlano = {
@@ -254,7 +264,7 @@ async function enviarPlanoAulaAPI() {
 }
 
 // -------------------------------------------------------------
-// MEUS PLANOS (COM CORREÇÃO DO FEEDBACK VAZIO)
+// MEUS PLANOS E EVIDÊNCIAS
 // -------------------------------------------------------------
 async function carregarMeusPlanos() {
   const container = document.getElementById('listaDePlanos');
@@ -273,7 +283,6 @@ async function carregarMeusPlanos() {
           <button onclick="abrirModalQR('${p.cadernoUrl}', '📱 QR Code: Caderno de Anexos')" style="flex:1; background:#8b5cf6; color:white; border:none; padding:10px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; min-width:110px;">📱 QR Anexos</button>
         ` : '';
 
-        // SÓ MOSTRA O FEEDBACK SE O STATUS FOR "Devolvido p/ Ajuste" E HOUVER TEXTO
         let feedbackHTML = "";
         if (p.status.includes('Devolvido') && p.feedback && p.feedback.trim() !== "") {
            feedbackHTML = `<div style="background:#fee2e2; color:#991b1b; padding:8px; border-radius:6px; font-size:0.85rem; margin-bottom:15px; border-left: 4px solid #ef4444;">💬 <strong>Motivo da Devolução:</strong> ${p.feedback}</div>`;
