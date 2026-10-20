@@ -114,10 +114,8 @@ function montarCheckboxes() {
   let mostrarRecSup = false;
   let mostrarSocioemocional = false;
 
-  // ✨ CORREÇÃO APLICADA AQUI: A separação do Objeto do Conhecimento agora ignora vírgulas!
   const extrairItensMultiplos = (textoBruto) => {
     if (!textoBruto || textoBruto === "-") return [];
-    // Separa apenas por quebra de linha (\n), ponto-e-vírgula (;) ou bullets (•, |)
     let partes = textoBruto.split(/\n|;|•|\|/);
     return partes.map(p => p.replace(/^[\-\◦]\s*/, "").trim()).filter(p => p.length > 2);
   };
@@ -202,6 +200,40 @@ function abrirIA(tipo) {
 }
 
 // -------------------------------------------------------------
+// NOVA FUNÇÃO: LIMPAR FORMULÁRIO DO PLANO
+// -------------------------------------------------------------
+function limparFormularioPlano() {
+  if(!confirm("Tem a certeza que deseja limpar todos os campos e começar um plano do zero?")) return;
+
+  // Limpa Inputs Básicos
+  document.getElementById('qtdAulas').value = "1";
+  document.getElementById('tipoPlano').selectedIndex = 0;
+  document.getElementById('dataInicioPer').value = "";
+  document.getElementById('dataFimPer').value = "";
+  
+  // Limpa Seleções e esconde os painéis de currículo
+  document.getElementById('componente').selectedIndex = 0;
+  document.getElementById('selTrimestre').selectedIndex = 2; // Volta para o 3º Trimestre
+  
+  document.querySelectorAll('input[name="chkTurmaProf"]').forEach(cb => cb.checked = false);
+  document.getElementById('blocoCurriculo').style.display = 'none';
+  
+  // Limpa Recursos e Metodologias
+  document.querySelectorAll('input[name="chk_recursos"]').forEach(cb => cb.checked = false);
+  
+  // Limpa a caixa de Desenvolvimento da IA
+  document.getElementById('desenvolvimento').innerHTML = "";
+  
+  // Restaura a caixa de Anexos
+  if(document.getElementById('chkGerarAnexos')) {
+      document.getElementById('chkGerarAnexos').checked = true;
+  }
+
+  // Faz o scroll suave para o topo
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// -------------------------------------------------------------
 // GERAÇÃO DO PLANO DE AULA
 // -------------------------------------------------------------
 async function enviarPlanoAulaAPI() {
@@ -260,7 +292,7 @@ async function enviarPlanoAulaAPI() {
       mudarAba('meusPlanos', null);
     } else { alert("Erro: " + r.mensagem); }
   } catch(e) { alert("Erro de conexão com o servidor."); } 
-  finally { btn.innerText = "🚀 Gerar Plano Oficial & Enviar para Supervisão"; btn.disabled = false; }
+  finally { btn.innerText = "🚀 Gerar Plano Oficial & Enviar"; btn.disabled = false; }
 }
 
 // -------------------------------------------------------------
